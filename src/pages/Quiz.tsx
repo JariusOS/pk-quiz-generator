@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Star, Copy, Home, RefreshCw } from 'lucide-react';
+import { Star, Copy, Home, RefreshCw, Lightbulb } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { fetchPKData } from '@/services/learnpoolApi';
@@ -25,6 +25,8 @@ interface GeneratedFact {
   categories: string[];
   timestamp: number;
   rating: number | null;
+  hintRevealed?: boolean;
+  hint?: string;
 }
 
 const Quiz = () => {
@@ -34,12 +36,14 @@ const Quiz = () => {
   const [isOnCooldown, setIsOnCooldown] = useState(false);
   const [cooldownEndTime, setCooldownEndTime] = useState<number | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [pkStars, setPkStars] = useLocalStorage<number>('pkStars', 10); // Starting with 10 stars
   
   // Local storage for generated facts history and cooldown data
   const [generatedFacts, setGeneratedFacts] = useLocalStorage<GeneratedFact[]>('generatedFacts', []);
   const [lastGeneratedTime, setLastGeneratedTime] = useLocalStorage<number | null>('lastGeneratedTime', null);
   
   const COOLDOWN_PERIOD = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+  const HINT_COST = 3; // Cost in PK stars to get a hint
   
   // Check cooldown status on load
   useEffect(() => {
@@ -91,6 +95,41 @@ const Quiz = () => {
         return [...prev, category];
       }
       return prev;
+    });
+  };
+  
+  // Generate a hint for the current fact
+  const generateHint = () => {
+    if (!generatedFact || generatedFact.hintRevealed || pkStars < HINT_COST) {
+      return;
+    }
+    
+    // Deduct stars for the hint
+    setPkStars(prev => prev - HINT_COST);
+    
+    // Generate a random number between 1 and 2000
+    const hintNumber = Math.floor(Math.random() * 2000) + 1;
+    const hint = `(see pk#${hintNumber})`;
+    
+    // Update the current fact with the hint
+    const updatedFact = {
+      ...generatedFact,
+      hintRevealed: true,
+      hint
+    };
+    
+    setGeneratedFact(updatedFact);
+    
+    // Also update in history
+    setGeneratedFacts(
+      generatedFacts.map(fact => 
+        fact.id === generatedFact.id ? updatedFact : fact
+      )
+    );
+    
+    toast({
+      title: "Hint Revealed!",
+      description: `You spent ${HINT_COST} PK stars to get a hint.`,
     });
   };
   
@@ -218,7 +257,8 @@ const Quiz = () => {
         text: factText,
         categories: [...selectedCategories],
         timestamp: Date.now(),
-        rating: null
+        rating: null,
+        hintRevealed: false
       };
       
       // Save to history
@@ -229,6 +269,9 @@ const Quiz = () => {
       setLastGeneratedTime(Date.now());
       setIsOnCooldown(true);
       setCooldownEndTime(Date.now() + COOLDOWN_PERIOD);
+      
+      // Reward user with 1 PK star for generating a fact
+      setPkStars(prev => prev + 1);
       
       toast({
         title: "Fact Generated!",
@@ -298,6 +341,12 @@ const Quiz = () => {
             Generate fascinating facts from LearnPool's Public Knowledge database.
             Select up to 3 categories to discover something new!
           </p>
+          <div className="mt-4 flex justify-center">
+            <div className="flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-950/40 p-2 rounded-full px-4 border border-yellow-200 dark:border-yellow-900/50">
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              <span className="font-medium text-yellow-700 dark:text-yellow-400">{pkStars}</span>
+            </div>
+          </div>
         </header>
         
         <main className="max-w-4xl mx-auto">
@@ -357,11 +406,28 @@ const Quiz = () => {
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={generateHint}
+                      disabled={generatedFact.hintRevealed || pkStars < HINT_COST}
+                      title={`Get a hint (costs ${HINT_COST} stars)`}
+                    >
+                      <Lightbulb className={`h-4 w-4 ${generatedFact.hintRevealed ? 'text-yellow-400 fill-yellow-400' : ''}`} />
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
                 <p className="text-lg leading-relaxed">{generatedFact.text}</p>
+                {generatedFact.hintRevealed && generatedFact.hint && (
+                  <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/30 rounded-md">
+                    <p className="flex items-center text-sm text-yellow-700 dark:text-yellow-400">
+                      <Lightbulb className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
+                      Hint: {generatedFact.hint}
+                    </p>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2 mt-4">
                   {generatedFact.categories.map(cat => (
                     <span key={cat} className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">
