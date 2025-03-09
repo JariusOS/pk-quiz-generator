@@ -105,7 +105,9 @@ const Quiz = () => {
     }
     
     // Deduct stars for the hint
-    setPkStars(prev => prev - HINT_COST);
+    // Fix: Use the current value instead of a function
+    const newStarCount = pkStars - HINT_COST;
+    setPkStars(newStarCount);
     
     // Generate a random number between 1 and 2000
     const hintNumber = Math.floor(Math.random() * 2000) + 1;
@@ -121,11 +123,10 @@ const Quiz = () => {
     setGeneratedFact(updatedFact);
     
     // Also update in history
-    setGeneratedFacts(
-      generatedFacts.map(fact => 
-        fact.id === generatedFact.id ? updatedFact : fact
-      )
+    const updatedFacts = generatedFacts.map(fact => 
+      fact.id === generatedFact.id ? updatedFact : fact
     );
+    setGeneratedFacts(updatedFacts);
     
     toast({
       title: "Hint Revealed!",
@@ -262,7 +263,8 @@ const Quiz = () => {
       };
       
       // Save to history
-      setGeneratedFacts([newFact, ...generatedFacts]);
+      const updatedFacts = [newFact, ...generatedFacts];
+      setGeneratedFacts(updatedFacts);
       setGeneratedFact(newFact);
       
       // Start cooldown
@@ -271,7 +273,8 @@ const Quiz = () => {
       setCooldownEndTime(Date.now() + COOLDOWN_PERIOD);
       
       // Reward user with 1 PK star for generating a fact
-      setPkStars(prev => prev + 1);
+      const newStarCount = pkStars + 1;
+      setPkStars(newStarCount);
       
       toast({
         title: "Fact Generated!",
@@ -320,11 +323,10 @@ const Quiz = () => {
     });
     
     // Update in history
-    setGeneratedFacts(
-      generatedFacts.map(fact => 
-        fact.id === generatedFact.id ? { ...fact, rating } : fact
-      )
+    const updatedFacts = generatedFacts.map(fact => 
+      fact.id === generatedFact.id ? { ...fact, rating } : fact
     );
+    setGeneratedFacts(updatedFacts);
     
     toast({
       title: "Thank you for rating!",

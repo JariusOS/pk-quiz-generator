@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -317,7 +316,8 @@ const ChallengeDetail = () => {
       }));
       
       // Add stars to user total
-      setPkStars(prev => prev + earnedStars);
+      const newStarTotal = pkStars + earnedStars;
+      setPkStars(newStarTotal);
       
       setIsActive(false);
       
@@ -366,7 +366,8 @@ const ChallengeDetail = () => {
     }
     
     // Deduct stars
-    setPkStars(prev => prev - HINT_COST);
+    const newStarTotal = pkStars - HINT_COST;
+    setPkStars(newStarTotal);
     
     // Update the current question to show it has a hint
     setQuizState(prev => {
