@@ -120,8 +120,13 @@ const generateDistractors = (text: string, correctAnswer: string, category: stri
 
 /**
  * Shuffle an array using Fisher-Yates algorithm
+ * Fixed the error by ensuring we handle null/undefined arrays properly
  */
 export const shuffleArray = <T>(array: T[]): T[] => {
+  if (!array || !Array.isArray(array) || array.length === 0) {
+    return [];
+  }
+  
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -134,6 +139,11 @@ export const shuffleArray = <T>(array: T[]): T[] => {
  * Generate a set of quiz questions from PK data
  */
 export const generateQuiz = (pkData: PKData[], questionCount: number = 5): QuizQuestion[] => {
+  // Check if pkData is valid
+  if (!pkData || !Array.isArray(pkData) || pkData.length === 0) {
+    return [];
+  }
+  
   // Shuffle PK data
   const shuffledData = shuffleArray(pkData);
   

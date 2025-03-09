@@ -3,8 +3,29 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ArrowRight, Award, Clock, Crown, Flame, Gift, Lightbulb, Star, Trophy, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PKStarCounter from '@/components/PKStarCounter';
+import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>("Proof of Stake");
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  const handleDailyChallengeSubmit = () => {
+    if (selectedAnswer === "Proof of Stake") {
+      toast({
+        title: "Correct!",
+        description: "You've earned 5 PK stars for today's challenge.",
+      });
+    } else {
+      toast({
+        title: "Incorrect",
+        description: "The correct answer was Proof of Stake.",
+        variant: "destructive",
+      });
+    }
+    setHasSubmitted(true);
+  };
+
   return (
     <div className="min-h-screen">
       <section className="px-4 py-20 md:py-32 relative overflow-hidden">
@@ -58,30 +79,51 @@ const Index = () => {
                 </div>
                 <PKStarCounter pkStars={25} />
               </div>
+              <div className="mb-4">
+                <h4 className="font-medium text-lg mb-2">What consensus mechanism does Ethereum currently use?</h4>
+              </div>
               <div className="space-y-4">
-                <div className="quiz-option selected">
+                <div 
+                  className={`quiz-option ${selectedAnswer === "Proof of Stake" ? "selected" : ""}`}
+                  onClick={() => !hasSubmitted && setSelectedAnswer("Proof of Stake")}
+                >
                   <div className="flex items-center justify-between">
                     <span>Proof of Stake</span>
-                    <span className="text-primary">Selected</span>
+                    {selectedAnswer === "Proof of Stake" && <span className="text-primary">Selected</span>}
                   </div>
                 </div>
-                <div className="quiz-option">
+                <div 
+                  className={`quiz-option ${selectedAnswer === "Proof of Work" ? "selected" : ""}`}
+                  onClick={() => !hasSubmitted && setSelectedAnswer("Proof of Work")}
+                >
                   <div className="flex items-center">
                     <span>Proof of Work</span>
                   </div>
                 </div>
-                <div className="quiz-option">
+                <div 
+                  className={`quiz-option ${selectedAnswer === "Delegated Proof of Stake" ? "selected" : ""}`}
+                  onClick={() => !hasSubmitted && setSelectedAnswer("Delegated Proof of Stake")}
+                >
                   <div className="flex items-center">
                     <span>Delegated Proof of Stake</span>
                   </div>
                 </div>
-                <div className="quiz-option">
+                <div 
+                  className={`quiz-option ${selectedAnswer === "Proof of Authority" ? "selected" : ""}`}
+                  onClick={() => !hasSubmitted && setSelectedAnswer("Proof of Authority")}
+                >
                   <div className="flex items-center">
                     <span>Proof of Authority</span>
                   </div>
                 </div>
               </div>
-              <Button className="w-full mt-6">Submit Answer</Button>
+              <Button 
+                className="w-full mt-6" 
+                onClick={handleDailyChallengeSubmit}
+                disabled={hasSubmitted}
+              >
+                {hasSubmitted ? "Submitted" : "Submit Answer"}
+              </Button>
             </div>
           </div>
         </div>
