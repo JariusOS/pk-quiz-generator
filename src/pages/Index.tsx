@@ -184,7 +184,7 @@ const Index = () => {
                 </div>
                 <div className="text-center">
                   <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 mx-auto mb-2 flex items-center justify-center opacity-50">
-                    <Fire className="h-6 w-6 text-gray-500" />
+                    <Flame className="h-6 w-6 text-gray-500" />
                   </div>
                   <span className="text-xs">Streak</span>
                 </div>
