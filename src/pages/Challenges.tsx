@@ -25,9 +25,11 @@ interface Challenge {
   reward: number;
   difficulty: 'easy' | 'medium' | 'hard';
   category: string;
+  tags: string[]; // Updated: Multiple tags (1-3)
   timeRemaining?: string;
   status?: 'active' | 'completed' | 'upcoming';
   featured?: boolean;
+  isMarathon?: boolean;
 }
 
 // Categories
@@ -48,6 +50,7 @@ const mockChallenges: Challenge[] = [
     reward: 25,
     difficulty: 'easy',
     category: 'Crypto',
+    tags: ['Crypto', 'Web3', 'Technology'],
     timeRemaining: '2d 4h',
     status: 'active',
     featured: true
@@ -60,6 +63,7 @@ const mockChallenges: Challenge[] = [
     reward: 40,
     difficulty: 'hard',
     category: 'Web3',
+    tags: ['Web3', 'Crypto'],
     timeRemaining: '1d 6h',
     status: 'active'
   },
@@ -71,6 +75,7 @@ const mockChallenges: Challenge[] = [
     reward: 35,
     difficulty: 'medium',
     category: 'Crypto',
+    tags: ['Crypto', 'Business'],
     timeRemaining: '12h',
     status: 'active'
   },
@@ -82,6 +87,7 @@ const mockChallenges: Challenge[] = [
     reward: 30,
     difficulty: 'medium',
     category: 'Business',
+    tags: ['Business', 'Crypto', 'Economics'],
     status: 'upcoming',
     timeRemaining: '3d 12h'
   },
@@ -93,6 +99,7 @@ const mockChallenges: Challenge[] = [
     reward: 45,
     difficulty: 'hard',
     category: 'Web3',
+    tags: ['Web3', 'Technology'],
     status: 'completed'
   },
   {
@@ -103,6 +110,7 @@ const mockChallenges: Challenge[] = [
     reward: 50,
     difficulty: 'medium',
     category: 'AI',
+    tags: ['AI', 'Technology', 'Science'],
     timeRemaining: '3d 8h',
     status: 'active',
     featured: true
@@ -115,6 +123,7 @@ const mockChallenges: Challenge[] = [
     reward: 35,
     difficulty: 'medium',
     category: 'History',
+    tags: ['History', 'Science'],
     timeRemaining: '4d 2h',
     status: 'active'
   },
@@ -126,6 +135,7 @@ const mockChallenges: Challenge[] = [
     reward: 30,
     difficulty: 'easy',
     category: 'Art',
+    tags: ['Art', 'Crypto', 'Web3'],
     status: 'upcoming',
     timeRemaining: '5d 18h'
   },
@@ -137,6 +147,7 @@ const mockChallenges: Challenge[] = [
     reward: 40,
     difficulty: 'hard',
     category: 'Science',
+    tags: ['Science', 'History'],
     timeRemaining: '9h',
     status: 'active',
     featured: true
@@ -149,6 +160,7 @@ const mockChallenges: Challenge[] = [
     reward: 30,
     difficulty: 'easy',
     category: 'Anime',
+    tags: ['Anime', 'Pop Culture'],
     status: 'completed'
   },
   {
@@ -159,6 +171,7 @@ const mockChallenges: Challenge[] = [
     reward: 35,
     difficulty: 'medium',
     category: 'Movie',
+    tags: ['Movie', 'Pop Culture', 'Science'],
     status: 'upcoming',
     timeRemaining: '2d 14h'
   },
@@ -170,9 +183,25 @@ const mockChallenges: Challenge[] = [
     reward: 25,
     difficulty: 'easy',
     category: 'Geography',
+    tags: ['Geography', 'Travel'],
     status: 'completed'
   }
 ];
+
+// New: Marathon Challenge
+const marathonChallenge: Challenge = {
+  id: 'marathon-1',
+  title: 'General Knowledge Marathon',
+  description: 'A 15-minute marathon of unlimited questions across all categories. How many can you answer correctly?',
+  participants: 756,
+  reward: 100,
+  difficulty: 'medium',
+  category: 'All Categories',
+  tags: ['Marathon', 'Mixed', 'General Knowledge'],
+  timeRemaining: 'Always Available',
+  status: 'active',
+  isMarathon: true
+};
 
 const Challenges = () => {
   // State for filters and sorting
@@ -190,7 +219,10 @@ const Challenges = () => {
     
     // Apply category filter
     if (selectedCategory !== 'All Categories') {
-      result = result.filter(challenge => challenge.category === selectedCategory);
+      result = result.filter(challenge => 
+        challenge.category === selectedCategory || 
+        challenge.tags.includes(selectedCategory)
+      );
     }
     
     // Apply search filter
@@ -200,7 +232,8 @@ const Challenges = () => {
         challenge => 
           challenge.title.toLowerCase().includes(query) || 
           challenge.description.toLowerCase().includes(query) ||
-          challenge.category.toLowerCase().includes(query)
+          challenge.category.toLowerCase().includes(query) ||
+          challenge.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
     
@@ -280,8 +313,12 @@ const Challenges = () => {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">Featured</div>
-                    <div className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
-                      {challenge.category}
+                    <div className="flex flex-wrap gap-1 justify-end">
+                      {challenge.tags.map((tag, index) => (
+                        <div key={tag} className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
+                          {tag}
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <CardTitle className="text-xl mt-4">{challenge.title}</CardTitle>
@@ -319,6 +356,54 @@ const Challenges = () => {
           </div>
         </div>
       )}
+
+      {/* New: Marathon Challenge */}
+      <div className="marathon-challenge mb-12">
+        <h2 className="text-2xl font-bold mb-6">General Marathon Challenge</h2>
+        <Card className="border-2 border-primary/70 bg-gradient-to-br from-primary/5 to-primary/0">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">Marathon</div>
+              <div className="flex flex-wrap gap-1 justify-end">
+                {marathonChallenge.tags.map((tag) => (
+                  <div key={tag} className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
+                    {tag}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <CardTitle className="text-xl mt-4">{marathonChallenge.title}</CardTitle>
+            <CardDescription>{marathonChallenge.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                <span>{marathonChallenge.participants} Participants</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                <span>15 min countdown</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-primary" />
+                <span>Up to {marathonChallenge.reward} PK Stars</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Medal className="h-5 w-5 text-primary" />
+                <span>Unlimited Questions</span>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button asChild className="w-full">
+              <Link to={`/challenge/${marathonChallenge.id}`}>
+                Start Marathon Challenge
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
 
       <div className="filters mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -381,8 +466,12 @@ const Challenges = () => {
                       <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(challenge.difficulty)}`}>
                         {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
                       </div>
-                      <div className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
-                        {challenge.category}
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {challenge.tags.map((tag) => (
+                          <div key={tag} className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
+                            {tag}
+                          </div>
+                        ))}
                       </div>
                     </div>
                     <CardTitle>{challenge.title}</CardTitle>
@@ -431,8 +520,12 @@ const Challenges = () => {
                       <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(challenge.difficulty)}`}>
                         {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
                       </div>
-                      <div className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
-                        {challenge.category}
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {challenge.tags.map((tag) => (
+                          <div key={tag} className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
+                            {tag}
+                          </div>
+                        ))}
                       </div>
                     </div>
                     <CardTitle>{challenge.title}</CardTitle>
@@ -479,8 +572,12 @@ const Challenges = () => {
                       <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(challenge.difficulty)}`}>
                         {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
                       </div>
-                      <div className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
-                        {challenge.category}
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {challenge.tags.map((tag) => (
+                          <div key={tag} className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
+                            {tag}
+                          </div>
+                        ))}
                       </div>
                     </div>
                     <CardTitle>{challenge.title}</CardTitle>

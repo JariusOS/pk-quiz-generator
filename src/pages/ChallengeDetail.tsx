@@ -1,366 +1,365 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { Clock, Home, Star, ChevronRight, Lightbulb, CheckCircle, XCircle } from 'lucide-react';
-import PKStarCounter from '@/components/PKStarCounter';
-import { QuizQuestion, QuizState } from '@/types/pkData';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { toast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import PKStarCounter from '@/components/PKStarCounter';
+import { CheckCircle, Clock, HelpCircle, Award, AlertCircle, ArrowLeft, User, Trophy, Timer, Zap } from 'lucide-react';
 
-// Difficulty settings
-const DIFFICULTY_SETTINGS = {
-  easy: { questions: 10, options: 3, timePerQuestion: 5 },
-  medium: { questions: 15, options: 4, timePerQuestion: 4 },
-  hard: { questions: 25, options: 5, timePerQuestion: 3 }
+// Mock challenge details - in a real app, fetch this from an API
+const MOCK_CHALLENGE = {
+  id: 'c1',
+  title: 'Blockchain Basics Challenge',
+  description: 'Test your knowledge of fundamental blockchain concepts in this timed challenge.',
+  tags: ['Crypto', 'Web3', 'Technology'],
+  difficulty: 'medium',
+  questionCount: 10,
+  timePerQuestion: 10, // Updated: 5-12 seconds per question
+  participants: 342,
+  reward: 25,
+  status: 'active'
 };
 
-// Mock questions generator
-const generateMockQuestions = (category: string, difficulty: 'easy' | 'medium' | 'hard'): QuizQuestion[] => {
-  const settings = DIFFICULTY_SETTINGS[difficulty];
-  const questions: QuizQuestion[] = [];
+interface Question {
+  id: string;
+  text: string;
+  options: string[];
+  correctAnswer: number;
+  userAnswer?: number;
+  isCorrect?: boolean;
+  hintUsed?: boolean;
+}
+
+interface QuizState {
+  questions: Question[];
+  currentQuestionIndex: number;
+  timeRemaining: number;
+  score: number;
+  isActive: boolean;
+  isComplete: boolean;
+}
+
+// Generate mock questions based on challenge
+const generateMockQuestions = (count: number, tags: string[]): Question[] => {
+  const questions: Question[] = [];
   
-  const questionBanks: Record<string, { question: string, options: string[], answer: string }[]> = {
-    'Crypto': [
-      {
-        question: 'Which consensus mechanism does Bitcoin use?',
-        options: ['Proof of Stake', 'Proof of Work', 'Proof of Authority', 'Delegated Proof of Stake', 'Proof of Space'],
-        answer: 'Proof of Work'
-      },
-      {
-        question: 'What was the first cryptocurrency?',
-        options: ['Ethereum', 'Bitcoin', 'Litecoin', 'Dogecoin', 'Ripple'],
-        answer: 'Bitcoin'
-      },
-      {
-        question: 'Who created Bitcoin?',
-        options: ['Vitalik Buterin', 'Satoshi Nakamoto', 'Charles Hoskinson', 'Elon Musk', 'Nick Szabo'],
-        answer: 'Satoshi Nakamoto'
-      },
-      {
-        question: 'What is the maximum supply of Bitcoin?',
-        options: ['1 million', '21 million', '100 million', 'Unlimited', '42 million'],
-        answer: '21 million'
-      },
-      {
-        question: 'What year was Bitcoin launched?',
-        options: ['2007', '2009', '2011', '2013', '2015'],
-        answer: '2009'
-      }
-    ],
-    'Web3': [
-      {
-        question: 'What is a DAO in Web3?',
-        options: ['Decentralized Autonomous Organization', 'Digital Asset Offering', 'Data Access Object', 'Distributed Application Ontology'],
-        answer: 'Decentralized Autonomous Organization'
-      },
-      {
-        question: 'What technology underlies most Web3 applications?',
-        options: ['Artificial Intelligence', 'Blockchain', 'Cloud Computing', 'Quantum Computing'],
-        answer: 'Blockchain'
-      },
-      {
-        question: 'What is a smart contract?',
-        options: ['A legal agreement with a tech company', 'Self-executing code on a blockchain', 'A digital signature', 'An intelligent AI assistant'],
-        answer: 'Self-executing code on a blockchain'
-      }
-    ],
-    'AI': [
-      {
-        question: 'What is the name of the architecture used in most modern large language models?',
-        options: ['CNN', 'RNN', 'Transformer', 'GAN', 'LSTM'],
-        answer: 'Transformer'
-      },
-      {
-        question: 'Which company created ChatGPT?',
-        options: ['Google', 'Meta', 'OpenAI', 'Microsoft', 'Amazon'],
-        answer: 'OpenAI'
-      },
-      {
-        question: 'What does AI stand for?',
-        options: ['Automated Intelligence', 'Artificial Intelligence', 'Advanced Integration', 'Algorithmic Inference'],
-        answer: 'Artificial Intelligence'
-      }
-    ],
-    'History': [
-      {
-        question: 'Which empire was ruled by Genghis Khan?',
-        options: ['Roman Empire', 'Ottoman Empire', 'Mongol Empire', 'Byzantine Empire', 'Persian Empire'],
-        answer: 'Mongol Empire'
-      },
-      {
-        question: 'In what year did World War II end?',
-        options: ['1943', '1944', '1945', '1946', '1947'],
-        answer: '1945'
-      },
-      {
-        question: 'Who was the first President of the United States?',
-        options: ['Thomas Jefferson', 'John Adams', 'George Washington', 'Abraham Lincoln', 'Benjamin Franklin'],
-        answer: 'George Washington'
-      }
-    ]
-  };
-  
-  // Fallback for categories without specific questions
-  const defaultQuestions = [
+  // Pool of crypto/blockchain questions
+  const cryptoQuestions = [
     {
-      question: `What is a key concept in ${category}?`,
-      options: ['Concept A', 'Concept B', 'Concept C', 'Concept D', 'Concept E'],
-      answer: 'Concept B'
+      text: 'What is the maximum supply of Bitcoin?',
+      options: ['10 million', '21 million', '100 million', 'Unlimited'],
+      correctAnswer: 1
     },
     {
-      question: `Who is an important figure in ${category}?`,
-      options: ['Person A', 'Person B', 'Person C', 'Person D', 'Person E'],
-      answer: 'Person C'
+      text: 'Which consensus mechanism does Bitcoin use?',
+      options: ['Proof of Stake', 'Proof of Work', 'Proof of Authority', 'Delegated Proof of Stake'],
+      correctAnswer: 1
     },
     {
-      question: `Which of these is related to ${category}?`,
-      options: ['Thing A', 'Thing B', 'Thing C', 'Thing D', 'Thing E'],
-      answer: 'Thing A'
+      text: 'What is a smart contract?',
+      options: [
+        'A legal agreement between two parties',
+        'Self-executing code on a blockchain',
+        'A type of cryptocurrency',
+        'A regulatory framework for crypto'
+      ],
+      correctAnswer: 1
+    },
+    {
+      text: 'Which of these is NOT a layer 1 blockchain?',
+      options: ['Ethereum', 'Solana', 'Polygon', 'Cardano'],
+      correctAnswer: 2
+    },
+    {
+      text: 'What was the first cryptocurrency?',
+      options: ['Ethereum', 'Bitcoin', 'Litecoin', 'Dogecoin'],
+      correctAnswer: 1
+    },
+    {
+      text: 'What does NFT stand for?',
+      options: ['New Financial Token', 'Non-Fungible Token', 'National Fund Transfer', 'Network Function Technology'],
+      correctAnswer: 1
+    },
+    {
+      text: 'Which year was Bitcoin created?',
+      options: ['2007', '2008', '2009', '2010'],
+      correctAnswer: 2
+    },
+    {
+      text: 'What is a blockchain fork?',
+      options: [
+        'A change to the blockchain protocol',
+        'A tool for mining crypto',
+        'A way to store private keys',
+        'A type of crypto wallet'
+      ],
+      correctAnswer: 0
+    },
+    {
+      text: 'Which of these is a privacy-focused cryptocurrency?',
+      options: ['Bitcoin', 'Ethereum', 'Monero', 'Cardano'],
+      correctAnswer: 2
+    },
+    {
+      text: 'What is a DAO?',
+      options: [
+        'Digital Asset Offering',
+        'Decentralized Autonomous Organization',
+        'Distributed Application Overlay',
+        'Direct Access Operation'
+      ],
+      correctAnswer: 1
+    },
+    {
+      text: 'What does DeFi stand for?',
+      options: ['Defined Finance', 'Decentralized Finance', 'Digital Finance', 'Derivative Finance'],
+      correctAnswer: 1
+    },
+    {
+      text: 'Which platform was first to introduce smart contracts?',
+      options: ['Bitcoin', 'Ethereum', 'Solana', 'Cardano'],
+      correctAnswer: 1
     }
   ];
   
-  const availableQuestions = questionBanks[category] || defaultQuestions;
-  
-  // Generate required number of questions
-  for (let i = 0; i < settings.questions; i++) {
-    // Use available questions and cycle through them if needed
-    const baseQuestion = availableQuestions[i % availableQuestions.length];
-    
-    // Take only the number of options needed for the difficulty
-    const allOptions = [...baseQuestion.options];
-    // Make sure the correct answer is included
-    const correctAnswerIndex = allOptions.indexOf(baseQuestion.answer);
-    const options: string[] = [];
-    
-    // Create a set of options based on difficulty
-    if (settings.options <= allOptions.length) {
-      // If we have enough options, randomly select them but ensure correct answer is included
-      const availableIndices = Array.from({ length: allOptions.length }, (_, i) => i)
-        .filter(idx => idx !== correctAnswerIndex); // Remove correct answer from pool
-      
-      // Shuffle available indices
-      for (let j = availableIndices.length - 1; j > 0; j--) {
-        const k = Math.floor(Math.random() * (j + 1));
-        [availableIndices[j], availableIndices[k]] = [availableIndices[k], availableIndices[j]];
-      }
-      
-      // Take needed number of options - 1 (to leave room for correct answer)
-      const selectedIndices = availableIndices.slice(0, settings.options - 1);
-      
-      // Add correct answer and selected options
-      options.push(baseQuestion.answer);
-      selectedIndices.forEach(idx => options.push(allOptions[idx]));
-      
-      // Shuffle options
-      for (let j = options.length - 1; j > 0; j--) {
-        const k = Math.floor(Math.random() * (j + 1));
-        [options[j], options[k]] = [options[k], options[j]];
-      }
-    } else {
-      // If we don't have enough options, use what we have
-      options.push(...allOptions);
-      
-      // Add additional options if needed
-      while (options.length < settings.options) {
-        options.push(`Option ${options.length + 1}`);
-      }
+  // Pool of web3 questions
+  const web3Questions = [
+    {
+      text: 'What does Web3 primarily aim to achieve?',
+      options: [
+        'Faster internet speeds',
+        'More visually appealing websites',
+        'Decentralization and user ownership',
+        'Better search engine optimization'
+      ],
+      correctAnswer: 2
+    },
+    {
+      text: 'Which technology is NOT typically associated with Web3?',
+      options: ['Blockchain', 'Cryptocurrencies', 'SQL databases', 'NFTs'],
+      correctAnswer: 2
+    },
+    {
+      text: 'What is a dApp?',
+      options: [
+        'Digital application',
+        'Decentralized application',
+        'Development application',
+        'Database application'
+      ],
+      correctAnswer: 1
+    },
+    {
+      text: 'Who coined the term "Web3"?',
+      options: ['Vitalik Buterin', 'Gavin Wood', 'Satoshi Nakamoto', 'Tim Berners-Lee'],
+      correctAnswer: 1
     }
-    
-    questions.push({
-      id: `q-${i + 1}`,
-      question: baseQuestion.question,
-      options,
-      correctAnswer: baseQuestion.answer,
-      pkId: i + 1,
-      category,
-      hintRevealed: false
-    });
+  ];
+  
+  // Pool of technology questions
+  const technologyQuestions = [
+    {
+      text: 'What does API stand for?',
+      options: [
+        'Application Programming Interface',
+        'Automated Programming Instance',
+        'Application Protocol Integration',
+        'Automated Process Interaction'
+      ],
+      correctAnswer: 0
+    },
+    {
+      text: 'Which of these is a distributed version control system?',
+      options: ['SVN', 'Git', 'CVS', 'Mercurial'],
+      correctAnswer: 1
+    },
+    {
+      text: 'What is the primary function of a compiler?',
+      options: [
+        'To execute code',
+        'To translate code from one language to another',
+        'To identify bugs in code',
+        'To compress code for efficient storage'
+      ],
+      correctAnswer: 1
+    }
+  ];
+  
+  // Get questions based on tags
+  const questionPool: any[] = [];
+  if (tags.includes('Crypto')) questionPool.push(...cryptoQuestions);
+  if (tags.includes('Web3')) questionPool.push(...web3Questions);
+  if (tags.includes('Technology')) questionPool.push(...technologyQuestions);
+  
+  // If no specific questions for tags, use a mix
+  if (questionPool.length === 0) {
+    questionPool.push(...cryptoQuestions, ...web3Questions, ...technologyQuestions);
   }
   
-  return questions;
+  // Shuffle and pick questions
+  const shuffled = [...questionPool].sort(() => 0.5 - Math.random());
+  const selected = shuffled.slice(0, count);
+  
+  // Format questions
+  return selected.map((q, index) => ({
+    id: `q-${index}`,
+    text: q.text,
+    options: q.options,
+    correctAnswer: q.correctAnswer
+  }));
 };
 
 const ChallengeDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [pkStars, setPkStars] = useLocalStorage<number>('pkStars', 10);
   
-  // Challenge state
-  const [challenge, setChallenge] = useState<{
-    id: string;
-    title: string;
-    description: string;
-    category: string;
-    difficulty: 'easy' | 'medium' | 'hard';
-    reward: number;
-  } | null>(null);
-  
-  // Quiz state
+  // Challenge data state
+  const [challenge] = useState(MOCK_CHALLENGE);
   const [quizState, setQuizState] = useState<QuizState>({
     questions: [],
     currentQuestionIndex: 0,
-    selectedAnswer: null,
-    isAnswerSubmitted: false,
-    isCorrect: null,
+    timeRemaining: 0,
     score: 0,
-    pkStars: 0,
-    completed: false,
+    isActive: false,
+    isComplete: false
   });
+  const [isActive, setIsActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Timer state
-  const [timer, setTimer] = useState<number>(0);
-  const [isActive, setIsActive] = useState<boolean>(false);
+  // Generate a timePerQuestion between 5-12 seconds
+  const getRandomTimePerQuestion = () => {
+    return Math.floor(Math.random() * 8) + 5; // 5-12 seconds
+  };
   
-  // Load challenge data
+  // Initialize quiz
   useEffect(() => {
-    // Mock challenge data - in a real app, this would come from an API
-    const mockChallenge = {
-      id: id || 'c1',
-      title: 'Blockchain Basics',
-      description: 'Test your knowledge of fundamental blockchain concepts',
-      category: 'Crypto',
-      difficulty: 'medium' as const,
-      reward: 25
-    };
-    
-    setChallenge(mockChallenge);
-    
-    // Generate questions based on challenge category and difficulty
-    const questions = generateMockQuestions(mockChallenge.category, mockChallenge.difficulty);
-    
-    setQuizState(prev => ({
-      ...prev,
-      questions,
-    }));
-  }, [id]);
+    if (challenge) {
+      // Generate questions based on challenge
+      const questions = generateMockQuestions(challenge.questionCount, challenge.tags);
+      
+      setQuizState({
+        questions,
+        currentQuestionIndex: 0,
+        timeRemaining: getRandomTimePerQuestion(),
+        score: 0,
+        isActive: false,
+        isComplete: false
+      });
+      
+      setIsLoading(false);
+    }
+  }, [challenge]);
   
-  // Timer effect
+  // Timer for active quiz
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let timer: number | undefined;
     
-    if (isActive && timer > 0) {
-      interval = setInterval(() => {
-        setTimer(prevTimer => {
-          if (prevTimer <= 1) {
-            // Time's up, move to next question
-            handleTimeUp();
-            return 0;
-          }
-          return prevTimer - 1;
-        });
-      }, 1000);
-    } else if (!isActive && interval) {
-      clearInterval(interval);
+    if (isActive && quizState.timeRemaining > 0) {
+      timer = window.setInterval(() => {
+        setQuizState(prev => ({
+          ...prev,
+          timeRemaining: Math.max(0, prev.timeRemaining - 0.1)
+        }));
+      }, 100);
+    } else if (isActive && quizState.timeRemaining <= 0) {
+      // Time's up for current question
+      handleTimeUp();
     }
     
     return () => {
-      if (interval) clearInterval(interval);
+      if (timer) clearInterval(timer);
     };
-  }, [isActive, timer]);
+  }, [isActive, quizState.timeRemaining]);
   
   // Start the challenge
   const startChallenge = () => {
-    if (!challenge) return;
-    
-    const settings = DIFFICULTY_SETTINGS[challenge.difficulty];
-    setTimer(settings.timePerQuestion);
     setIsActive(true);
-  };
-  
-  // Handle time up
-  const handleTimeUp = () => {
-    if (quizState.isAnswerSubmitted) return;
-    
-    // Auto-submit with no selection
-    handleAnswerSubmit(null);
-  };
-  
-  // Handle answer selection
-  const selectAnswer = (answer: string) => {
-    if (quizState.isAnswerSubmitted) return;
-    
     setQuizState(prev => ({
       ...prev,
-      selectedAnswer: answer
+      isActive: true,
+      timeRemaining: getRandomTimePerQuestion()
     }));
   };
   
-  // Submit an answer and move to the next question
-  const handleAnswerSubmit = (selectedAnswer: string | null) => {
-    if (!challenge) return;
+  // Handle time up for a question
+  const handleTimeUp = () => {
+    // Mark current question as incorrect
+    const updatedQuestions = [...quizState.questions];
+    updatedQuestions[quizState.currentQuestionIndex] = {
+      ...updatedQuestions[quizState.currentQuestionIndex],
+      isCorrect: false
+    };
     
-    const currentQuestion = quizState.questions[quizState.currentQuestionIndex];
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-    
-    // Update score if correct
-    const newScore = isCorrect ? quizState.score + 1 : quizState.score;
-    
-    // Check if this is the last question
-    const isLastQuestion = quizState.currentQuestionIndex === quizState.questions.length - 1;
-    
-    if (isLastQuestion) {
-      // Challenge complete
-      const earnedStars = Math.ceil((newScore / quizState.questions.length) * challenge.reward);
-      
-      setQuizState(prev => ({
-        ...prev,
-        selectedAnswer,
-        isAnswerSubmitted: true,
-        isCorrect,
-        score: newScore,
-        pkStars: earnedStars,
-        completed: true
-      }));
-      
-      // Add stars to user total
-      const newStarTotal = pkStars + earnedStars;
-      setPkStars(newStarTotal);
-      
-      setIsActive(false);
-      
-      toast({
-        title: "Challenge Complete!",
-        description: `You scored ${newScore} out of ${quizState.questions.length} and earned ${earnedStars} PK stars!`,
-      });
+    // Check if this was the last question
+    if (quizState.currentQuestionIndex >= quizState.questions.length - 1) {
+      finishChallenge();
     } else {
       // Move to next question
       setQuizState(prev => ({
         ...prev,
-        selectedAnswer,
-        isAnswerSubmitted: true,
-        isCorrect,
-        score: newScore
+        questions: updatedQuestions,
+        currentQuestionIndex: prev.currentQuestionIndex + 1,
+        timeRemaining: getRandomTimePerQuestion()
       }));
-      
-      // Show result briefly, then move to next question
-      setTimeout(() => {
-        const settings = DIFFICULTY_SETTINGS[challenge.difficulty];
-        
-        setQuizState(prev => ({
-          ...prev,
-          currentQuestionIndex: prev.currentQuestionIndex + 1,
-          selectedAnswer: null,
-          isAnswerSubmitted: false,
-          isCorrect: null
-        }));
-        
-        setTimer(settings.timePerQuestion);
-      }, 1500);
     }
   };
   
-  // Reveal hint for current question
-  const revealHint = () => {
-    const HINT_COST = 3;
+  // Handle answer selection
+  const handleAnswerSelect = (optionIndex: number) => {
+    if (!isActive) return;
     
+    const currentQuestion = quizState.questions[quizState.currentQuestionIndex];
+    const isCorrect = optionIndex === currentQuestion.correctAnswer;
+    
+    // Update current question
+    const updatedQuestions = [...quizState.questions];
+    updatedQuestions[quizState.currentQuestionIndex] = {
+      ...currentQuestion,
+      userAnswer: optionIndex,
+      isCorrect
+    };
+    
+    // Update score if correct
+    const newScore = isCorrect ? quizState.score + 1 : quizState.score;
+    
+    // Check if this was the last question
+    if (quizState.currentQuestionIndex >= quizState.questions.length - 1) {
+      setQuizState(prev => ({
+        ...prev,
+        questions: updatedQuestions,
+        score: newScore,
+        timeRemaining: 0
+      }));
+      
+      finishChallenge(newScore);
+    } else {
+      // Move to next question
+      setQuizState(prev => ({
+        ...prev,
+        questions: updatedQuestions,
+        currentQuestionIndex: prev.currentQuestionIndex + 1,
+        timeRemaining: getRandomTimePerQuestion(),
+        score: newScore
+      }));
+    }
+  };
+  
+  // Get hint for the current question
+  const HINT_COST = 3; // Cost in PK stars
+  
+  const getHint = () => {
     if (pkStars < HINT_COST) {
       toast({
-        title: "Not enough stars",
-        description: `You need ${HINT_COST} PK stars to reveal a hint.`,
-        variant: "destructive"
+        title: "Not enough PK Stars",
+        description: `You need ${HINT_COST} stars to get a hint.`,
+        variant: "destructive",
       });
       return;
     }
@@ -372,231 +371,299 @@ const ChallengeDetail = () => {
     // Update the current question to show it has a hint
     setQuizState(prev => {
       const updatedQuestions = [...prev.questions];
-      updatedQuestions[prev.currentQuestionIndex].hintRevealed = true;
+      updatedQuestions[prev.currentQuestionIndex] = {
+        ...updatedQuestions[prev.currentQuestionIndex],
+        hintUsed: true
+      };
       
       return {
         ...prev,
-        questions: updatedQuestions
+        questions: updatedQuestions,
+        // Add some time as a bonus for using a hint
+        timeRemaining: prev.timeRemaining + 3
       };
     });
     
+    // Show hint
     toast({
-      title: "Hint Revealed!",
-      description: `You spent ${HINT_COST} PK stars on a hint.`
+      title: "Hint",
+      description: "One option has been eliminated!",
     });
   };
   
-  // Finish the challenge and return to challenges page
-  const finishChallenge = () => {
-    navigate('/challenges');
+  // Finish the challenge
+  const finishChallenge = (finalScore = quizState.score) => {
+    // Calculate earned stars based on score and difficulty
+    const difficultyMultiplier = 
+      challenge.difficulty === 'easy' ? 1 :
+      challenge.difficulty === 'medium' ? 1.5 : 2;
+    
+    const earnedStars = Math.round(
+      (finalScore / quizState.questions.length) * challenge.reward * difficultyMultiplier
+    );
+    
+    setQuizState(prev => ({
+      ...prev,
+      isActive: false,
+      isComplete: true,
+      score: finalScore
+    }));
+    
+    // Add stars to user total
+    const newStarTotal = pkStars + earnedStars;
+    setPkStars(newStarTotal);
+    
+    setIsActive(false);
+    
+    toast({
+      title: "Challenge Complete!",
+      description: `You earned ${earnedStars} PK stars!`,
+    });
   };
   
-  if (!challenge) {
+  // Get the difficulty class for styling
+  const getDifficultyClass = (difficulty: string) => {
+    switch (difficulty) {
+      case 'easy': return 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400';
+      case 'medium': return 'bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400';
+      case 'hard': return 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400';
+      default: return 'bg-gray-50 text-gray-600 dark:bg-gray-950/30 dark:text-gray-400';
+    }
+  };
+  
+  if (isLoading) {
     return (
-      <div className="container mx-auto py-16 px-4 text-center">
-        <p>Loading challenge...</p>
+      <div className="container mx-auto py-16 px-4">
+        <div className="text-center">Loading challenge...</div>
       </div>
     );
   }
   
   const currentQuestion = quizState.questions[quizState.currentQuestionIndex];
-  const progressPercentage = (quizState.currentQuestionIndex / quizState.questions.length) * 100;
   
   return (
-    <div className="container mx-auto py-16 px-4">
-      <div className="max-w-3xl mx-auto">
-        {!isActive && !quizState.completed ? (
-          // Challenge intro
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center mb-4">
-                <div className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                  challenge.difficulty === 'easy' ? 'text-green-500 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900/50' :
-                  challenge.difficulty === 'medium' ? 'text-orange-500 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900/50' :
-                  'text-red-500 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50'
-                }`}>
-                  {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
-                </div>
-                <div className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
-                  {challenge.category}
-                </div>
-              </div>
-              <CardTitle>{challenge.title}</CardTitle>
-              <CardDescription>{challenge.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b pb-2">
-                  <span>Number of questions:</span>
-                  <span className="font-medium">{DIFFICULTY_SETTINGS[challenge.difficulty].questions}</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-2">
-                  <span>Time per question:</span>
-                  <span className="font-medium">{DIFFICULTY_SETTINGS[challenge.difficulty].timePerQuestion} seconds</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-2">
-                  <span>Maximum reward:</span>
-                  <PKStarCounter pkStars={challenge.reward} />
-                </div>
-                <div className="mt-6 p-4 bg-primary/5 rounded-lg">
-                  <p className="text-center text-sm">
-                    Answer quickly and correctly to earn maximum points! You have limited time for each question.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={startChallenge} className="w-full">Start Challenge</Button>
-            </CardFooter>
-          </Card>
-        ) : quizState.completed ? (
-          // Challenge results
-          <Card>
-            <CardHeader>
-              <CardTitle>Challenge Complete!</CardTitle>
-              <CardDescription>
-                You've completed the {challenge.title} challenge
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center mb-6">
-                <div className="text-5xl font-bold mb-2">
-                  {quizState.score} / {quizState.questions.length}
-                </div>
-                <p className="text-muted-foreground">correct answers</p>
-              </div>
-              
-              <div className="p-4 bg-primary/5 rounded-lg mb-6">
-                <div className="text-center mb-2">You earned</div>
-                <div className="flex justify-center">
-                  <PKStarCounter pkStars={quizState.pkStars} />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span>Score percentage:</span>
-                  <span className="font-medium">{Math.round((quizState.score / quizState.questions.length) * 100)}%</span>
-                </div>
-                <Progress value={(quizState.score / quizState.questions.length) * 100} className="h-2" />
-              </div>
-            </CardContent>
-            <CardFooter className="flex gap-3">
-              <Button variant="outline" asChild className="flex-1">
-                <Link to={`/challenges`}>
-                  <Home className="mr-2 h-4 w-4" />
-                  All Challenges
-                </Link>
-              </Button>
-              <Button className="flex-1" onClick={finishChallenge}>
-                Finish
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
-        ) : currentQuestion ? (
-          // Question view
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div className="flex gap-2 items-center">
-                <PKStarCounter pkStars={pkStars} />
+    <div className="container mx-auto py-8 md:py-16 px-4">
+      <Button 
+        variant="ghost" 
+        className="mb-4" 
+        onClick={() => navigate('/challenges')}
+        disabled={isActive}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Challenges
+      </Button>
+      
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">{challenge.title}</h1>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {challenge.tags.map(tag => (
+              <Badge key={tag} variant="secondary">{tag}</Badge>
+            ))}
+          </div>
+        </div>
+        <PKStarCounter pkStars={pkStars} />
+      </div>
+      
+      {!quizState.isActive && !quizState.isComplete && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Challenge Details</CardTitle>
+            <CardDescription>{challenge.description}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary/60" />
+                <span>{challenge.participants} participants</span>
               </div>
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
-                <span className={`font-bold ${timer <= 2 ? 'text-red-500' : ''}`}>{timer}s</span>
+                <Trophy className="h-5 w-5 text-primary/60" />
+                <span>Up to {challenge.reward} PK stars reward</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Timer className="h-5 w-5 text-primary/60" />
+                <span>5-12 seconds per question</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary/60" />
+                <span>
+                  <Badge className={`${getDifficultyClass(challenge.difficulty)}`}>
+                    {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
+                  </Badge>
+                </span>
               </div>
             </div>
             
-            <div className="mb-4">
-              <Progress value={progressPercentage} className="h-2" />
-              <div className="flex justify-between mt-1 text-xs text-muted-foreground">
-                <span>Question {quizState.currentQuestionIndex + 1} of {quizState.questions.length}</span>
-                <span>{Math.round(progressPercentage)}% complete</span>
+            <Separator />
+            
+            <div>
+              <h3 className="font-medium mb-2">How to Play:</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 mt-0.5 text-primary/60" />
+                  <span>Each question has a timer of 5-12 seconds. Answer before time runs out!</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-primary/60" />
+                  <span>Select the correct answer to earn points.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <HelpCircle className="h-4 w-4 mt-0.5 text-primary/60" />
+                  <span>You can use hints for difficult questions (costs 3 PK stars).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Award className="h-4 w-4 mt-0.5 text-primary/60" />
+                  <span>Earn PK stars based on your performance and the challenge difficulty.</span>
+                </li>
+              </ul>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={startChallenge} className="w-full">Start Challenge</Button>
+          </CardFooter>
+        </Card>
+      )}
+      
+      {quizState.isActive && currentQuestion && (
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Question {quizState.currentQuestionIndex + 1} of {quizState.questions.length}</CardTitle>
+              <div className="flex items-center">
+                <span className="mr-2">Score: {quizState.score}</span>
+                <span className="text-sm font-medium px-2 py-1 rounded-full bg-primary/10">{Math.floor(quizState.score / quizState.questions.length * 100)}%</span>
               </div>
             </div>
+            {/* Updated: Made timer more prominent */}
+            <div className="flex flex-col items-center justify-center mt-2">
+              <div className="text-center font-bold text-xl mb-1">
+                {Math.ceil(quizState.timeRemaining)}s
+              </div>
+              <Progress 
+                value={(quizState.timeRemaining / getRandomTimePerQuestion()) * 100} 
+                className="h-2 w-full"
+                indicatorClassName={quizState.timeRemaining < 3 ? "bg-red-500" : ""}
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-lg font-medium">{currentQuestion.text}</div>
             
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs">
-                    {currentQuestion.category}
-                  </div>
-                  {!quizState.isAnswerSubmitted && !currentQuestion.hintRevealed && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-1"
-                      onClick={revealHint}
-                      disabled={pkStars < 3}
-                    >
-                      <Lightbulb className="h-4 w-4" />
-                      Hint (3 <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />)
-                    </Button>
-                  )}
-                </div>
-                <CardTitle className="text-xl mt-2">{currentQuestion.question}</CardTitle>
-                {currentQuestion.hintRevealed && (
-                  <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/30 rounded-md">
-                    <p className="flex items-center text-sm text-yellow-700 dark:text-yellow-400">
-                      <Lightbulb className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
-                      Hint: (see pk#{Math.floor(Math.random() * 2000) + 1})
-                    </p>
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {currentQuestion.options.map((option, index) => (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                        quizState.isAnswerSubmitted
-                          ? option === currentQuestion.correctAnswer
-                            ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900/30'
-                            : option === quizState.selectedAnswer
-                              ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900/30'
-                              : 'bg-muted/20 border-border'
-                          : quizState.selectedAnswer === option
-                            ? 'bg-primary/5 border-primary/30'
-                            : 'hover:bg-muted/50 border-border'
-                      }`}
-                      onClick={() => selectAnswer(option)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>{option}</span>
-                        {quizState.isAnswerSubmitted && (
-                          option === currentQuestion.correctAnswer ? (
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          ) : option === quizState.selectedAnswer ? (
-                            <XCircle className="h-5 w-5 text-red-500" />
-                          ) : null
-                        )}
-                      </div>
+            <div className="space-y-3">
+              {currentQuestion.options.map((option, index) => {
+                // If hint is used, hide one wrong answer
+                const isHiddenByHint = 
+                  currentQuestion.hintUsed && 
+                  index !== currentQuestion.correctAnswer && 
+                  // Use a deterministic way to choose which wrong answer to hide
+                  (index === (currentQuestion.correctAnswer + 1) % currentQuestion.options.length);
+                
+                if (isHiddenByHint) {
+                  return null;
+                }
+                
+                return (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    className="w-full justify-start h-auto py-4 px-4 font-normal"
+                    onClick={() => handleAnswerSelect(index)}
+                  >
+                    <span className="flex-1 text-left">{option}</span>
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={getHint}
+              disabled={currentQuestion.hintUsed || pkStars < HINT_COST}
+              className="gap-2"
+            >
+              <HelpCircle className="h-4 w-4" />
+              Use Hint (3 PK stars)
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleTimeUp}
+              className="gap-2"
+            >
+              Skip Question
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+      
+      {quizState.isComplete && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Challenge Results</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-center py-6">
+              <div className="text-4xl font-bold mb-2">{quizState.score} / {quizState.questions.length}</div>
+              <p className="text-lg text-muted-foreground">
+                {quizState.score / quizState.questions.length >= 0.7 
+                  ? "Great job! You did excellent!" 
+                  : quizState.score / quizState.questions.length >= 0.4
+                  ? "Good effort! Keep practicing."
+                  : "Practice makes perfect. Try again!"}
+              </p>
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-4 mt-6">
+              <h3 className="font-medium">Question Review:</h3>
+              
+              {quizState.questions.map((question, index) => (
+                <div key={question.id} className="rounded-lg border p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Q{index + 1}.</span>
+                      <span>{question.text}</span>
                     </div>
-                  ))}
+                    {question.isCorrect !== undefined && (
+                      question.isCorrect 
+                        ? <CheckCircle className="h-5 w-5 text-green-500" /> 
+                        : <AlertCircle className="h-5 w-5 text-red-500" />
+                    )}
+                  </div>
+                  
+                  <div className="mt-2 ml-6 space-y-1 text-sm">
+                    {question.options.map((option, optIndex) => (
+                      <div 
+                        key={optIndex}
+                        className={`py-1 px-2 rounded ${
+                          optIndex === question.correctAnswer 
+                            ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400' 
+                            : optIndex === question.userAnswer && optIndex !== question.correctAnswer
+                            ? 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400'
+                            : ''
+                        }`}
+                      >
+                        {option}
+                        {optIndex === question.correctAnswer && ' ✓'}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full"
-                  onClick={() => handleAnswerSubmit(quizState.selectedAnswer)}
-                  disabled={!quizState.selectedAnswer || quizState.isAnswerSubmitted}
-                >
-                  {quizState.isAnswerSubmitted
-                    ? quizState.currentQuestionIndex === quizState.questions.length - 1
-                      ? 'Finishing...'
-                      : 'Next Question...'
-                    : 'Submit Answer'}
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        ) : (
-          <div className="text-center">
-            <p>Loading questions...</p>
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={() => navigate('/challenges')} variant="outline" className="w-full sm:w-auto">
+              Back to Challenges
+            </Button>
+            <Button onClick={() => window.location.reload()} className="w-full sm:w-auto">
+              Try Again
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
     </div>
   );
 };

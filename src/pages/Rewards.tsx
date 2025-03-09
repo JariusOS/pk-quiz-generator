@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PKStarCounter from '@/components/PKStarCounter';
-import { Award, CheckCircle, Clock, Coffee, Gift, GraduationCap, Headphones, ShoppingBag, User } from 'lucide-react';
+import { Award, Books, BookOpen, CheckCircle, Clock, Coffee, Gift, GraduationCap, Headphones, LucideIcon, Map, Podcast, ShoppingBag, Ticket, User, Video, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 interface Reward {
@@ -17,59 +17,139 @@ interface Reward {
   image: string;
   category: 'digital' | 'physical' | 'experience';
   featured?: boolean;
+  eligible?: boolean;
 }
 
 const rewards: Reward[] = [
+  // Digital rewards (lower to mid tier)
   {
     id: 'r1',
     title: 'Premium Account (1 Month)',
     description: 'Get access to all premium features for one month',
-    cost: 100,
+    cost: 1000,
     image: 'crown',
     category: 'digital',
     featured: true
   },
   {
     id: 'r2',
-    title: 'LearnPool T-Shirt',
-    description: 'High-quality t-shirt with the LearnPool logo',
-    cost: 250,
-    image: 'tshirt',
-    category: 'physical'
-  },
-  {
-    id: 'r3',
     title: 'Custom Discord Role',
     description: 'Get a special role in the LearnPool Discord server',
-    cost: 75,
+    cost: 750,
     image: 'discord',
     category: 'digital'
   },
   {
+    id: 'r3',
+    title: 'Exclusive E-book Collection',
+    description: 'A curated collection of educational e-books',
+    cost: 1500,
+    image: 'book',
+    category: 'digital'
+  },
+  {
     id: 'r4',
+    title: 'Custom Profile Theme',
+    description: 'Personalize your LearnPool profile with exclusive themes',
+    cost: 500,
+    image: 'theme',
+    category: 'digital'
+  },
+  {
+    id: 'r5',
+    title: 'Advanced Question Generator',
+    description: 'Generate more complex and customizable questions',
+    cost: 2000,
+    image: 'generator',
+    category: 'digital'
+  },
+  
+  // Physical rewards (mid tier)
+  {
+    id: 'r6',
+    title: 'LearnPool T-Shirt',
+    description: 'High-quality t-shirt with the LearnPool logo',
+    cost: 2500,
+    image: 'tshirt',
+    category: 'physical'
+  },
+  {
+    id: 'r7',
+    title: 'Coffee Mug',
+    description: 'LearnPool branded coffee mug',
+    cost: 1500,
+    image: 'mug',
+    category: 'physical'
+  },
+  {
+    id: 'r8',
+    title: 'Learning Journal',
+    description: 'Premium notebook with learning templates and guides',
+    cost: 2000,
+    image: 'journal',
+    category: 'physical'
+  },
+  {
+    id: 'r9',
+    title: 'Amazon Gift Card ($25)',
+    description: 'Gift card to purchase educational materials',
+    cost: 3000,
+    image: 'gift-card',
+    category: 'physical'
+  },
+  {
+    id: 'r10',
+    title: 'Learning Kit Bundle',
+    description: 'Complete set of LearnPool branded notebooks, pens, and planners',
+    cost: 4000,
+    image: 'kit',
+    category: 'physical',
+    featured: true
+  },
+  
+  // Experience rewards (high tier)
+  {
+    id: 'r11',
     title: 'Mentorship Session',
     description: '30-minute mentorship session with a LearnPool expert',
-    cost: 300,
+    cost: 5000,
     image: 'mentorship',
     category: 'experience',
     featured: true
   },
   {
-    id: 'r5',
-    title: 'Coffee Mug',
-    description: 'LearnPool branded coffee mug',
-    cost: 150,
-    image: 'mug',
-    category: 'physical'
+    id: 'r12',
+    title: 'Exclusive Webinar Access',
+    description: 'Access to premium educational webinars for 3 months',
+    cost: 7500,
+    image: 'webinar',
+    category: 'experience'
   },
   {
-    id: 'r6',
-    title: 'Study Guide Bundle',
-    description: 'Digital bundle of premium study guides',
-    cost: 125,
-    image: 'book',
-    category: 'digital'
+    id: 'r13',
+    title: 'Educational Conference Ticket',
+    description: 'Ticket to a major educational tech conference (travel not included)',
+    cost: 15000,
+    image: 'conference',
+    category: 'experience'
   },
+  {
+    id: 'r14',
+    title: 'Personalized Learning Plan',
+    description: 'Customized learning roadmap created by educational experts',
+    cost: 6000,
+    image: 'plan',
+    category: 'experience'
+  },
+  {
+    id: 'r15',
+    title: 'Study Retreat Weekend',
+    description: 'Weekend retreat focused on intensive learning in your field',
+    cost: 12000,
+    image: 'retreat',
+    category: 'experience',
+    featured: true
+  }
 ];
 
 const getRewardIcon = (image: string) => {
@@ -79,13 +159,33 @@ const getRewardIcon = (image: string) => {
     case 'discord': return <Headphones className="h-10 w-10 text-indigo-500" />;
     case 'mentorship': return <GraduationCap className="h-10 w-10 text-green-500" />;
     case 'mug': return <Coffee className="h-10 w-10 text-amber-500" />;
-    case 'book': return <Award className="h-10 w-10 text-purple-500" />;
+    case 'book': return <BookOpen className="h-10 w-10 text-purple-500" />;
+    case 'theme': return <Zap className="h-10 w-10 text-yellow-500" />;
+    case 'generator': return <Gift className="h-10 w-10 text-pink-500" />;
+    case 'journal': return <Books className="h-10 w-10 text-cyan-500" />;
+    case 'gift-card': return <Gift className="h-10 w-10 text-red-500" />;
+    case 'kit': return <ShoppingBag className="h-10 w-10 text-indigo-500" />;
+    case 'webinar': return <Video className="h-10 w-10 text-blue-500" />;
+    case 'conference': return <Ticket className="h-10 w-10 text-green-500" />;
+    case 'plan': return <Map className="h-10 w-10 text-teal-500" />;
+    case 'retreat': return <Map className="h-10 w-10 text-orange-500" />;
     default: return <Gift className="h-10 w-10 text-primary" />;
   }
 };
 
 const Rewards = () => {
-  const [userPkStars] = useState(185);
+  const [userPkStars, setUserPkStars] = useState(185);
+  const [eligibleRewards, setEligibleRewards] = useState<Reward[]>([]);
+  
+  // Check which rewards the user can afford
+  useEffect(() => {
+    const eligible = rewards
+      .filter(reward => userPkStars >= reward.cost)
+      .map(reward => ({ ...reward, eligible: true }))
+      .slice(0, 3); // Show top 3 eligible rewards
+    
+    setEligibleRewards(eligible);
+  }, [userPkStars]);
   
   const handleRedeemReward = (reward: Reward) => {
     if (userPkStars >= reward.cost) {
@@ -111,6 +211,44 @@ const Rewards = () => {
         </div>
         <PKStarCounter pkStars={userPkStars} />
       </div>
+
+      {eligibleRewards.length > 0 && (
+        <Card className="mb-12 border-primary/20">
+          <CardHeader>
+            <CardTitle className="text-2xl">Rewards You Can Redeem Now</CardTitle>
+            <CardDescription>Based on your current PK Star balance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {eligibleRewards.map(reward => (
+                <Card key={reward.id} className="border-primary/20">
+                  <CardHeader className="pb-0">
+                    <div className="mb-4 w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
+                      {getRewardIcon(reward.image)}
+                    </div>
+                    <CardTitle>{reward.title}</CardTitle>
+                    <CardDescription>{reward.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div className="text-muted-foreground text-sm">Cost:</div>
+                      <PKStarCounter pkStars={reward.cost} />
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      onClick={() => handleRedeemReward(reward)} 
+                      className="w-full"
+                    >
+                      Redeem Now
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <Card className="bg-gradient-to-br from-primary/5 to-primary/0 border-primary/20">
@@ -167,33 +305,33 @@ const Rewards = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm font-medium">Premium Account</span>
-                <span className="text-sm text-muted-foreground">{userPkStars}/100</span>
+                <span className="text-sm text-muted-foreground">{userPkStars}/1000</span>
               </div>
-              <Progress value={(userPkStars / 100) * 100} className="h-2" />
+              <Progress value={(userPkStars / 1000) * 100} className="h-2" />
             </div>
             
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm font-medium">LearnPool T-Shirt</span>
-                <span className="text-sm text-muted-foreground">{userPkStars}/250</span>
+                <span className="text-sm text-muted-foreground">{userPkStars}/2500</span>
               </div>
-              <Progress value={(userPkStars / 250) * 100} className="h-2" />
+              <Progress value={(userPkStars / 2500) * 100} className="h-2" />
             </div>
             
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Custom Discord Role</span>
-                <span className="text-sm text-muted-foreground">{userPkStars}/75</span>
+                <span className="text-sm font-medium">Mentorship Session</span>
+                <span className="text-sm text-muted-foreground">{userPkStars}/5000</span>
               </div>
-              <Progress value={(userPkStars / 75) * 100} className="h-2" />
+              <Progress value={(userPkStars / 5000) * 100} className="h-2" />
             </div>
             
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Coffee Mug</span>
-                <span className="text-sm text-muted-foreground">{userPkStars}/150</span>
+                <span className="text-sm font-medium">Educational Conference</span>
+                <span className="text-sm text-muted-foreground">{userPkStars}/15000</span>
               </div>
-              <Progress value={(userPkStars / 150) * 100} className="h-2" />
+              <Progress value={(userPkStars / 15000) * 100} className="h-2" />
             </div>
           </CardContent>
           <CardFooter>
