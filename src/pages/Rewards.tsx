@@ -1,10 +1,9 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PKStarCounter from '@/components/PKStarCounter';
-import { Award, Books, BookOpen, CheckCircle, Clock, Coffee, Gift, GraduationCap, Headphones, LucideIcon, Map, Podcast, ShoppingBag, Ticket, User, Video, Zap } from 'lucide-react';
+import { Award, Book, BookOpen, CheckCircle, Clock, Coffee, Gift, GraduationCap, Headphones, Map, Podcast, ShoppingBag, Ticket, User, Video, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
@@ -162,7 +161,7 @@ const getRewardIcon = (image: string) => {
     case 'book': return <BookOpen className="h-10 w-10 text-purple-500" />;
     case 'theme': return <Zap className="h-10 w-10 text-yellow-500" />;
     case 'generator': return <Gift className="h-10 w-10 text-pink-500" />;
-    case 'journal': return <Books className="h-10 w-10 text-cyan-500" />;
+    case 'journal': return <Book className="h-10 w-10 text-cyan-500" />;
     case 'gift-card': return <Gift className="h-10 w-10 text-red-500" />;
     case 'kit': return <ShoppingBag className="h-10 w-10 text-indigo-500" />;
     case 'webinar': return <Video className="h-10 w-10 text-blue-500" />;
@@ -177,12 +176,11 @@ const Rewards = () => {
   const [userPkStars, setUserPkStars] = useState(185);
   const [eligibleRewards, setEligibleRewards] = useState<Reward[]>([]);
   
-  // Check which rewards the user can afford
   useEffect(() => {
     const eligible = rewards
       .filter(reward => userPkStars >= reward.cost)
       .map(reward => ({ ...reward, eligible: true }))
-      .slice(0, 3); // Show top 3 eligible rewards
+      .slice(0, 3);
     
     setEligibleRewards(eligible);
   }, [userPkStars]);
@@ -204,12 +202,31 @@ const Rewards = () => {
   
   return (
     <div className="container mx-auto py-16 px-4">
+      <div className="mb-12 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/40 dark:to-amber-950/40 p-8 rounded-xl border border-yellow-200 dark:border-yellow-900/50 shadow-sm">
+        <div className="flex flex-col items-center text-center">
+          <h2 className="text-xl font-medium text-yellow-700 dark:text-yellow-400 mb-3">Your Star Balance</h2>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Award className="h-12 w-12 text-yellow-500 fill-yellow-300/50" />
+            <span className="text-5xl font-bold text-yellow-600 dark:text-yellow-300">{userPkStars}</span>
+            <Award className="h-12 w-12 text-yellow-500 fill-yellow-300/50" />
+          </div>
+          <p className="text-muted-foreground mb-4 max-w-md">Use your PK stars to unlock exclusive rewards and enhance your learning experience!</p>
+          <div className="flex gap-3">
+            <Button asChild variant="outline" className="bg-yellow-50 dark:bg-yellow-950/40 border-yellow-200 dark:border-yellow-900/50 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/60">
+              <Link to="/quiz">Earn More Stars</Link>
+            </Button>
+            <Button asChild>
+              <Link to="/challenges">Join Challenges</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Rewards Program</h1>
           <p className="text-muted-foreground">Redeem your PK stars for exclusive rewards</p>
         </div>
-        <PKStarCounter pkStars={userPkStars} />
       </div>
 
       {eligibleRewards.length > 0 && (
