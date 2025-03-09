@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PKStarCounter from '@/components/PKStarCounter';
-import { Award, Crown, Trophy, Filter, Fire } from 'lucide-react';
+import { Award, Crown, Trophy, Filter, Flame, Star } from 'lucide-react';
 
 interface LeaderboardUser {
   id: number;
@@ -53,7 +54,7 @@ const Leaderboard = () => {
             <Star className="h-4 w-4" /> PK Stars
           </TabsTrigger>
           <TabsTrigger value="streaks" className="flex items-center gap-1">
-            <Fire className="h-4 w-4" /> Streaks
+            <Flame className="h-4 w-4" /> Streaks
           </TabsTrigger>
           <TabsTrigger value="badges" className="flex items-center gap-1">
             <Award className="h-4 w-4" /> Badges
@@ -129,7 +130,7 @@ const Leaderboard = () => {
                       <div className="font-medium">{user.name}</div>
                     </div>
                     <div className="flex items-center space-x-1 bg-orange-50 dark:bg-orange-950/40 p-2 rounded-full px-4 border border-orange-200 dark:border-orange-900/50">
-                      <Fire className="h-5 w-5 text-orange-500" />
+                      <Flame className="h-5 w-5 text-orange-500" />
                       <span className="font-medium text-orange-700 dark:text-orange-400">{user.streak} days</span>
                     </div>
                   </div>

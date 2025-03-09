@@ -1,7 +1,6 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Award, Clock, Crown, Fire, Gift, Lightbulb, Star, Trophy, Users } from 'lucide-react';
+import { ArrowRight, Award, Clock, Crown, Flame, Gift, Lightbulb, Star, Trophy, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PKStarCounter from '@/components/PKStarCounter';
 
@@ -100,7 +99,7 @@ const Index = () => {
           <Card>
             <CardHeader>
               <div className="mb-4 h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Fire className="h-6 w-6 text-primary" />
+                <Flame className="h-6 w-6 text-primary" />
               </div>
               <CardTitle>Daily Streak Rewards</CardTitle>
               <CardDescription>
