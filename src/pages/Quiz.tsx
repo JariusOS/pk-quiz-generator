@@ -143,9 +143,9 @@ const Quiz = () => {
         // Fallback facts for each category
         const categoryFacts: Record<string, string[]> = {
           'Crypto': [
-            'Bitcoin's creator Satoshi Nakamoto owns about 1 million bitcoins (worth billions) but has never moved them.',
-            'The first commercial Bitcoin transaction was for two pizzas, now worth millions in today's value.',
-            'There will only ever be 21 million Bitcoins, and the last one is projected to be mined in 2140.'
+            "Bitcoin's creator Satoshi Nakamoto owns about 1 million bitcoins (worth billions) but has never moved them.",
+            "The first commercial Bitcoin transaction was for two pizzas, now worth millions in today's value.",
+            "There will only ever be 21 million Bitcoins, and the last one is projected to be mined in 2140."
           ],
           'Web3': [
             'The first NFT, "Quantum," was created by Kevin McCoy in 2014, years before the NFT boom.',
@@ -165,11 +165,11 @@ const Quiz = () => {
           'Geography': [
             'Russia has 11 time zones, more than any other country.',
             'Canada has more lakes than the rest of the world combined.',
-            'The driest place on Earth, the Atacama Desert, has areas that haven't received rain in over 400 years.'
+            "The driest place on Earth, the Atacama Desert, has areas that haven't received rain in over 400 years."
           ],
           'Anime': [
-            'Pokémon was inspired by creator Satoshi Tajiri's childhood hobby of collecting insects.',
-            'Studio Ghibli's first film "Castle in the Sky" contains a secret "Ghibli" easter egg in Morse code.',
+            "Pokémon was inspired by creator Satoshi Tajiri's childhood hobby of collecting insects.",
+            'Studio Ghibli\'s first film "Castle in the Sky" contains a secret "Ghibli" easter egg in Morse code.',
             'The hand-drawn anime "Akira" used 160,000+ animation cels, setting records for its time.'
           ],
           'Art': [
@@ -179,7 +179,7 @@ const Quiz = () => {
           ],
           'Movie': [
             'The "Wilhelm Scream" sound effect has been used in over 400 films since 1951.',
-            'The original "Lion King" was inspired by Shakespeare's "Hamlet" and the Bible stories of Joseph and Moses.',
+            'The original "Lion King" was inspired by Shakespeare\'s "Hamlet" and the Bible stories of Joseph and Moses.',
             'The Lord of the Rings trilogy used over 48,000 pieces of armor, weapons, and prosthetics.'
           ],
           'Business': [
@@ -189,13 +189,13 @@ const Quiz = () => {
           ],
           'AI': [
             'The term "artificial intelligence" was first coined at a conference at Dartmouth College in 1956.',
-            'The first AI system to beat a world chess champion was IBM's Deep Blue against Garry Kasparov in 1997.',
+            "The first AI system to beat a world chess champion was IBM's Deep Blue against Garry Kasparov in 1997.",
             'GPT-3, released in 2020, was trained on 570GB of text data, equivalent to about 400 billion words.'
           ],
           'Books': [
             'Agatha Christie wrote her novels in the bathtub while eating apples.',
-            'Stephen King's first novel "Carrie" was rejected 30 times before being published.',
-            'The word "robot" first appeared in Karel Čapek's 1920 play "R.U.R." (Rossum's Universal Robots).'
+            "Stephen King's first novel \"Carrie\" was rejected 30 times before being published.",
+            'The word "robot" first appeared in Karel Čapek\'s 1920 play "R.U.R." (Rossum\'s Universal Robots).'
           ]
         };
         
