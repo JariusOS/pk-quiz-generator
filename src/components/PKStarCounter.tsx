@@ -25,8 +25,17 @@ const PKStarCounter = ({ pkStars, size = 'md' }: PKStarCounterProps) => {
     }
   };
 
+  const getContainerSize = () => {
+    switch (size) {
+      case 'sm': return 'p-1 px-3';
+      case 'lg': return 'p-2 px-5';
+      case 'xl': return 'p-3 px-6';
+      default: return 'p-2 px-4';
+    }
+  };
+
   return (
-    <div className="flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-950/40 p-2 rounded-full px-4 border border-yellow-200 dark:border-yellow-900/50">
+    <div className={`flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-950/40 ${getContainerSize()} rounded-full border border-yellow-200 dark:border-yellow-900/50`}>
       <Star className={`${getSize()} fill-yellow-400 text-yellow-400`} />
       <span className={`font-medium text-yellow-700 dark:text-yellow-400 ${getTextSize()}`}>{pkStars}</span>
     </div>

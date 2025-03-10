@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import PKStarCounter from '@/components/PKStarCounter';
-import { ArrowRight, ArrowUp, ArrowDown, Clock, Medal, ShieldCheck, Users, Zap, Filter, Search, Trophy, Calendar, Timer } from 'lucide-react';
+import { ArrowRight, ArrowUp, ArrowDown, Clock, Flag, Medal, ShieldCheck, Users, Zap, Filter, Search, Trophy, Calendar, Timer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { toast } from '@/hooks/use-toast';
@@ -25,11 +25,13 @@ interface Challenge {
   reward: number;
   difficulty: 'easy' | 'medium' | 'hard';
   category: string;
-  tags: string[]; // Updated: Multiple tags (1-3)
+  tags: string[]; // Multiple tags (1-3)
   timeRemaining?: string;
   status?: 'active' | 'completed' | 'upcoming';
   featured?: boolean;
   isMarathon?: boolean;
+  marathonAnchor?: string;
+  nextMarathonTime?: string;
 }
 
 // Categories
@@ -40,145 +42,145 @@ const CATEGORIES = [
   'Books', 'Confessions'
 ];
 
-// Extended mock challenges
+// Extended mock challenges with creative names based on tags
 const mockChallenges: Challenge[] = [
   {
     id: 'c1',
-    title: 'Blockchain Basics',
-    description: 'Test your knowledge of fundamental blockchain concepts',
+    title: 'Crypto Time Machine',
+    description: 'Test your knowledge of fundamental blockchain concepts through time',
     participants: 342,
     reward: 25,
     difficulty: 'easy',
     category: 'Crypto',
-    tags: ['Crypto', 'Web3', 'Technology'],
+    tags: ['Crypto', 'History'],
     timeRemaining: '2d 4h',
     status: 'active',
     featured: true
   },
   {
     id: 'c2',
-    title: 'Smart Contract Deep Dive',
-    description: 'Advanced questions about smart contract development',
+    title: 'Decentralized Dreamer',
+    description: 'Advanced questions about smart contract development and blockchain visions',
     participants: 128,
     reward: 40,
     difficulty: 'hard',
     category: 'Web3',
-    tags: ['Web3', 'Crypto'],
+    tags: ['Web3', 'Crypto', 'Ideas'],
     timeRemaining: '1d 6h',
     status: 'active'
   },
   {
     id: 'c3',
-    title: 'DeFi Protocols',
-    description: 'All about decentralized finance mechanisms',
+    title: 'HODL Historian',
+    description: 'All about decentralized finance mechanisms through economic history',
     participants: 256,
     reward: 35,
     difficulty: 'medium',
     category: 'Crypto',
-    tags: ['Crypto', 'Business'],
+    tags: ['Crypto', 'History', 'Business'],
     timeRemaining: '12h',
     status: 'active'
   },
   {
     id: 'c4',
-    title: 'Crypto Economics',
-    description: 'Understand the economic models of cryptocurrencies',
+    title: 'Cinematic Trader',
+    description: 'Understand the economic models of cryptocurrencies as portrayed in films',
     participants: 198,
     reward: 30,
     difficulty: 'medium',
     category: 'Business',
-    tags: ['Business', 'Crypto', 'Economics'],
+    tags: ['Business', 'Crypto', 'Movie'],
     status: 'upcoming',
     timeRemaining: '3d 12h'
   },
   {
     id: 'c5',
-    title: 'Layer 2 Solutions',
-    description: 'Scaling technologies for blockchain networks',
+    title: 'Metaverse Voyager',
+    description: 'Scaling technologies for blockchain networks and virtual worlds',
     participants: 312,
     reward: 45,
     difficulty: 'hard',
     category: 'Web3',
-    tags: ['Web3', 'Technology'],
+    tags: ['Web3', 'Travel', 'AI'],
     status: 'completed'
   },
   {
     id: 'c6',
-    title: 'AI Revolution',
-    description: 'The past, present and future of artificial intelligence',
+    title: 'Silicon Sage',
+    description: 'The past, present and future of artificial intelligence and scientific breakthroughs',
     participants: 423,
     reward: 50,
     difficulty: 'medium',
     category: 'AI',
-    tags: ['AI', 'Technology', 'Science'],
+    tags: ['AI', 'Science', 'Books'],
     timeRemaining: '3d 8h',
     status: 'active',
     featured: true
   },
   {
     id: 'c7',
-    title: 'Ancient Civilizations',
-    description: 'Explore the mysteries of ancient worlds and their technologies',
+    title: 'Time-Traveling Otaku',
+    description: 'Explore the historical connections between anime and ancient worlds',
     participants: 185,
     reward: 35,
     difficulty: 'medium',
     category: 'History',
-    tags: ['History', 'Science'],
+    tags: ['History', 'Anime'],
     timeRemaining: '4d 2h',
     status: 'active'
   },
   {
     id: 'c8',
-    title: 'NFT Art Movement',
-    description: 'Test your knowledge of digital art and NFT collections',
+    title: 'Abstract Soul',
+    description: 'Test your knowledge of digital art and personality types of famous artists',
     participants: 276,
     reward: 30,
     difficulty: 'easy',
     category: 'Art',
-    tags: ['Art', 'Crypto', 'Web3'],
+    tags: ['Art', 'Personality'],
     status: 'upcoming',
     timeRemaining: '5d 18h'
   },
   {
     id: 'c9',
-    title: 'Space Exploration',
-    description: 'From the moon landing to Mars missions and beyond',
+    title: 'Space Nomad',
+    description: 'From the moon landing to Mars missions and space travel discoveries',
     participants: 367,
     reward: 40,
     difficulty: 'hard',
     category: 'Science',
-    tags: ['Science', 'History'],
+    tags: ['Science', 'Geography', 'Travel'],
     timeRemaining: '9h',
     status: 'active',
     featured: true
   },
   {
     id: 'c10',
-    title: 'Anime Classics',
-    description: 'Test your knowledge of legendary anime series and films',
+    title: 'Netflixer',
+    description: 'Test your knowledge of legendary anime series and popular streaming movies',
     participants: 589,
     reward: 30,
     difficulty: 'easy',
     category: 'Anime',
-    tags: ['Anime', 'Pop Culture'],
+    tags: ['Anime', 'Movie'],
     status: 'completed'
   },
   {
     id: 'c11',
-    title: 'Sci-Fi Movies Marathon',
-    description: 'How well do you know your science fiction cinema?',
+    title: 'Dystopian Visionary',
+    description: 'How well do you know your science fiction cinema and futuristic concepts?',
     participants: 412,
     reward: 35,
     difficulty: 'medium',
     category: 'Movie',
-    tags: ['Movie', 'Pop Culture', 'Science'],
+    tags: ['Movie', 'AI', 'Ideas'],
     status: 'upcoming',
     timeRemaining: '2d 14h'
   },
   {
     id: 'c12',
-    title: 'World Geography',
-    description: 'Test your knowledge of countries, capitals and landmarks',
+    title: 'Earth Maestro',
+    description: 'Test your knowledge of countries, capitals and travel landmarks',
     participants: 321,
     reward: 25,
     difficulty: 'easy',
@@ -200,7 +202,9 @@ const marathonChallenge: Challenge = {
   tags: ['Marathon', 'Mixed', 'General Knowledge'],
   timeRemaining: 'Always Available',
   status: 'active',
-  isMarathon: true
+  isMarathon: true,
+  marathonAnchor: 'Dr. Alex Kingston',
+  nextMarathonTime: '2h 45m'
 };
 
 const Challenges = () => {
@@ -285,22 +289,74 @@ const Challenges = () => {
       description: "You'll be notified when this challenge starts.",
     });
   };
+
+  // Handler for creating challenge
+  const handleCreateChallenge = () => {
+    if (pkStars < 10) {
+      toast({
+        title: "Insufficient PK Stars",
+        description: "You need at least 10 PK stars to create a challenge.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Deduct 10 stars
+    setPkStars(pkStars - 10);
+    
+    // Navigate to create challenge page
+    window.location.href = "/challenge/create";
+  };
+
+  // Handler for creating marathon
+  const handleCreateMarathon = () => {
+    if (pkStars < 100) {
+      toast({
+        title: "Insufficient PK Stars",
+        description: "You need at least 100 PK stars to create a marathon challenge.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Deduct 100 stars
+    setPkStars(pkStars - 100);
+    
+    // Navigate to create challenge page with marathon param
+    window.location.href = "/challenge/create?type=marathon";
+  };
   
   // Get featured challenges
   const featuredChallenges = mockChallenges.filter(c => c.featured);
   
   return (
     <div className="container mx-auto py-16 px-4">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Challenges</h1>
-          <p className="text-muted-foreground">Compete with others on timed quiz challenges</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <PKStarCounter pkStars={pkStars} />
-          <Button asChild>
-            <Link to="/challenge/create">Create Challenge</Link>
-          </Button>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">PK Challenges</h1>
+        <p className="text-muted-foreground mb-6">Compete with others on timed quiz challenges from the learnpool platform</p>
+        
+        <div className="bg-muted/30 p-6 rounded-lg mb-8">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-1">
+              <p className="text-sm md:text-base">
+                The Learnpool PK Hub is an exciting extension of the LearnPool ISO platform, designed to make learning of public knowledge interactive and competitive. Create and join timed quizzes across various topics, answer fast-paced questions, and earn PK stars for your achievements. Schedule upcoming challenges, track your progress, and stay ahead in the ultimate pk showdown! Start your journey by submitting to the platform at pk.learnpool.fun.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex items-center justify-between">
+                <PKStarCounter pkStars={pkStars} />
+              </div>
+              <div className="flex items-center gap-3">
+                <Button onClick={handleCreateChallenge}>
+                  Create Challenge (10 ★)
+                </Button>
+                <Button variant="outline" onClick={handleCreateMarathon} className="whitespace-nowrap">
+                  <Flag className="mr-2 h-4 w-4" />
+                  Create Marathon (100 ★)
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -376,22 +432,34 @@ const Challenges = () => {
             <CardDescription>{marathonChallenge.description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                <span>{marathonChallenge.participants} Participants</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="bg-background/80 p-4 rounded-lg border border-border">
+                <div className="text-center mb-2">
+                  <span className="text-sm text-muted-foreground">Next Marathon with</span>
+                  <h3 className="text-lg font-bold">{marathonChallenge.marathonAnchor}</h3>
+                </div>
+                <div className="bg-primary/10 p-3 rounded-lg text-center">
+                  <span className="text-sm text-muted-foreground block mb-1">Starts in</span>
+                  <span className="text-2xl font-mono font-bold text-primary">{marathonChallenge.nextMarathonTime}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <span>15 min countdown</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" />
-                <span>Up to {marathonChallenge.reward} PK Stars</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Medal className="h-5 w-5 text-primary" />
-                <span>Unlimited Questions</span>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <span>{marathonChallenge.participants} Participants</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <span>15 min countdown</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-primary" />
+                  <span>Up to {marathonChallenge.reward} PK Stars</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Medal className="h-5 w-5 text-primary" />
+                  <span>Unlimited Questions</span>
+                </div>
               </div>
             </div>
           </CardContent>

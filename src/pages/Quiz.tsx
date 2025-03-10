@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Star, Copy, Home, RefreshCw, Lightbulb } from 'lucide-react';
+import { Star, Copy, Home, RefreshCw, Lightbulb, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { fetchPKData } from '@/services/learnpoolApi';
@@ -27,12 +27,15 @@ interface GeneratedFact {
   rating: number | null;
   hintRevealed?: boolean;
   hint?: string;
+  expanded?: boolean;
+  expandedText?: string;
 }
 
 const Quiz = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [generatedFact, setGeneratedFact] = useState<GeneratedFact | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isExpanding, setIsExpanding] = useState(false);
   const [isOnCooldown, setIsOnCooldown] = useState(false);
   const [cooldownEndTime, setCooldownEndTime] = useState<number | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
@@ -105,9 +108,7 @@ const Quiz = () => {
     }
     
     // Deduct stars for the hint
-    // Fix: Use the current value instead of a function
-    const newStarCount = pkStars - HINT_COST;
-    setPkStars(newStarCount);
+    setPkStars(pkStars - HINT_COST);
     
     // Generate a random number between 1 and 2000
     const hintNumber = Math.floor(Math.random() * 2000) + 1;
@@ -132,6 +133,81 @@ const Quiz = () => {
       title: "Hint Revealed!",
       description: `You spent ${HINT_COST} PK stars to get a hint.`,
     });
+  };
+  
+  // Expand the current fact with more details
+  const expandFact = () => {
+    if (!generatedFact || generatedFact.expanded || isExpanding) {
+      return;
+    }
+    
+    setIsExpanding(true);
+    
+    // Generate expanded text (in production this would call an API)
+    setTimeout(() => {
+      const baseText = generatedFact.text;
+      const expandedText = `${baseText} ${generateExtendedContent(generatedFact.categories)}`;
+      
+      // Update the current fact with expanded text
+      const updatedFact = {
+        ...generatedFact,
+        expanded: true,
+        expandedText
+      };
+      
+      setGeneratedFact(updatedFact);
+      
+      // Also update in history
+      const updatedFacts = generatedFacts.map(fact => 
+        fact.id === generatedFact.id ? updatedFact : fact
+      );
+      setGeneratedFacts(updatedFacts);
+      
+      setIsExpanding(false);
+      
+      toast({
+        title: "Fact Expanded!",
+        description: "You now have a more comprehensive explanation.",
+      });
+    }, 1500);
+  };
+  
+  // Helper function to generate extended content based on categories
+  const generateExtendedContent = (categories: string[]): string => {
+    const expandedContentByCategory: Record<string, string[]> = {
+      'Crypto': [
+        "This is significant because it represents a paradigm shift in how value is transferred online without central intermediaries. The cryptographic techniques used ensure security while the decentralized ledger provides transparency.",
+        "Experts in the field have noted that this demonstrates the power of cryptographic principles when applied to economic systems. The implications continue to evolve as the technology matures and adoption increases.",
+        "The intersection of cryptography and economic incentives has created a new field of study that continues to challenge traditional financial systems and provide alternatives to centralized control mechanisms."
+      ],
+      'Web3': [
+        "This development represents a key milestone in the evolution toward a truly decentralized internet, where users control their data and digital assets without relying on centralized authorities or platforms.",
+        "The architecture behind this creates a more resilient and censorship-resistant framework for online interactions. Early adopters have already begun building communities around these principles.",
+        "Decentralized applications built on these technologies enable new forms of coordination and value creation that weren't possible in previous iterations of the internet."
+      ],
+      'Science': [
+        "This scientific discovery has profound implications for our understanding of natural phenomena. Multiple peer-reviewed studies have confirmed these findings, though research continues to refine our knowledge.",
+        "The methodologies used to reach these conclusions represent significant advances in the field. Future applications may include practical technologies that leverage these principles in unexpected ways.",
+        "Researchers working across disciplines have found that this phenomenon has wide-ranging implications that extend beyond its original field of discovery."
+      ],
+      'History': [
+        "Historical records from multiple independent sources confirm this fascinating period of human history. The sociopolitical implications resonated for generations and continue to influence cultural development today.",
+        "Archaeological evidence uncovered in recent excavations has provided additional context that helps historians better understand the full significance of these events and their lasting impact.",
+        "The intersection of cultural, economic and political factors during this time created conditions that would eventually reshape entire civilizations in ways that continue to be studied."
+      ]
+    };
+    
+    // Choose a random category from the fact's categories that has expanded content available
+    const availableCategories = categories.filter(cat => expandedContentByCategory[cat]);
+    
+    if (availableCategories.length === 0) {
+      return "This fascinating fact highlights just one aspect of a complex and evolving field. Researchers and enthusiasts continue to explore related phenomena, expanding our collective knowledge and understanding of this fascinating subject.";
+    }
+    
+    const chosenCategory = availableCategories[Math.floor(Math.random() * availableCategories.length)];
+    const expandedOptions = expandedContentByCategory[chosenCategory] || [];
+    
+    return expandedOptions[Math.floor(Math.random() * expandedOptions.length)] || "This fascinating fact has much deeper implications than initially apparent, connecting to broader themes and concepts within this field of study.";
   };
   
   // Generate a fact based on selected categories
@@ -395,72 +471,94 @@ const Quiz = () => {
           </Card>
           
           {generatedFact && (
-            <Card className="overflow-hidden">
-              <CardHeader className="bg-primary/5">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-xl">Did you know?</CardTitle>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={copyToClipboard}
-                      title="Copy to clipboard"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={generateHint}
-                      disabled={generatedFact.hintRevealed || pkStars < HINT_COST}
-                      title={`Get a hint (costs ${HINT_COST} stars)`}
-                    >
-                      <Lightbulb className={`h-4 w-4 ${generatedFact.hintRevealed ? 'text-yellow-400 fill-yellow-400' : ''}`} />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                <p className="text-lg leading-relaxed">{generatedFact.text}</p>
-                {generatedFact.hintRevealed && generatedFact.hint && (
-                  <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/30 rounded-md">
-                    <p className="flex items-center text-sm text-yellow-700 dark:text-yellow-400">
-                      <Lightbulb className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
-                      Hint: {generatedFact.hint}
-                    </p>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {generatedFact.categories.map(cat => (
-                    <span key={cat} className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">
-                      {cat}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter className="bg-muted/20 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground mb-1">Rate this fact:</p>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map(rating => (
-                      <button
-                        key={rating}
-                        onClick={() => rateFact(rating)}
-                        className="text-gray-300 hover:text-yellow-400 transition-colors focus:outline-none"
-                        title={`${rating} star${rating !== 1 ? 's' : ''}`}
+            <div className="space-y-4">
+              <Card className="overflow-hidden">
+                <CardHeader className="bg-primary/5">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-xl">Did you know?</CardTitle>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={copyToClipboard}
+                        title="Copy to clipboard"
                       >
-                        <Star 
-                          className={`h-6 w-6 ${generatedFact.rating && generatedFact.rating >= rating ? 'text-yellow-400 fill-yellow-400' : ''}`} 
-                        />
-                      </button>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={generateHint}
+                        disabled={generatedFact.hintRevealed || pkStars < HINT_COST}
+                        title={`Get a hint (costs ${HINT_COST} stars)`}
+                      >
+                        <Lightbulb className={`h-4 w-4 ${generatedFact.hintRevealed ? 'text-yellow-400 fill-yellow-400' : ''}`} />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <p className="text-lg leading-relaxed">{generatedFact.text}</p>
+                  {generatedFact.expanded && generatedFact.expandedText && (
+                    <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border">
+                      <p className="text-sm text-muted-foreground mb-1">Extended Explanation:</p>
+                      <p className="text-base">{generatedFact.expandedText.replace(generatedFact.text, '')}</p>
+                    </div>
+                  )}
+                  {generatedFact.hintRevealed && generatedFact.hint && (
+                    <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/30 rounded-md">
+                      <p className="flex items-center text-sm text-yellow-700 dark:text-yellow-400">
+                        <Lightbulb className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
+                        Hint: {generatedFact.hint}
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {generatedFact.categories.map(cat => (
+                      <span key={cat} className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">
+                        {cat}
+                      </span>
                     ))}
                   </div>
-                </div>
-                <div className="text-sm text-muted-foreground self-end">
-                  Next fact available in: {timeRemaining}
-                </div>
-              </CardFooter>
-            </Card>
+                </CardContent>
+                <CardFooter className="bg-muted/20 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground mb-1">Rate this fact:</p>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(rating => (
+                        <button
+                          key={rating}
+                          onClick={() => rateFact(rating)}
+                          className="text-gray-300 hover:text-yellow-400 transition-colors focus:outline-none"
+                          title={`${rating} star${rating !== 1 ? 's' : ''}`}
+                        >
+                          <Star 
+                            className={`h-6 w-6 ${generatedFact.rating && generatedFact.rating >= rating ? 'text-yellow-400 fill-yellow-400' : ''}`} 
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground self-end">
+                    Next fact available in: {timeRemaining}
+                  </div>
+                </CardFooter>
+              </Card>
+              
+              <Button 
+                className="w-full" 
+                onClick={expandFact}
+                disabled={generatedFact.expanded || isExpanding}
+              >
+                {isExpanding ? 
+                  "Expanding..." : 
+                  generatedFact.expanded ? 
+                    "Fact Expanded" : 
+                    "Expand This Fact"
+                }
+                {!isExpanding && !generatedFact.expanded && <ArrowRight className="ml-2 h-4 w-4" />}
+              </Button>
+            </div>
           )}
           
           <div className="mt-8 flex justify-center">

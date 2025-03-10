@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { Award, BarChart, BookOpen, Crown, Menu, Users, X } from "lucide-react";
+import { Award, BarChart, BookOpen, Crown, ExternalLink, Menu, Moon, Sun, Users, X } from "lucide-react";
 import LearnPoolLogo from "@/components/brand/LearnPoolLogo";
 import {
   Sheet,
@@ -22,12 +22,16 @@ export default function Header() {
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center space-x-2">
             <LearnPoolLogo className="h-8 w-8" />
-            <span className="font-heading font-bold">LearnPool</span>
+            <span className="font-heading font-bold">LearnPool PK Hub</span>
           </Link>
           <nav className="hidden md:flex md:gap-6">
             <Link to="/quiz" className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               <BookOpen className="mr-1 h-4 w-4" />
               Generate
+            </Link>
+            <Link to="/quizzes" className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+              <Award className="mr-1 h-4 w-4" />
+              Quiz
             </Link>
             <Link to="/challenges" className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               <Users className="mr-1 h-4 w-4" />
@@ -53,6 +57,12 @@ export default function Header() {
               Login with LearnPool
             </Link>
           </Button>
+          <Button asChild variant="outline" className="gap-2 hidden md:flex">
+            <a href="https://pk.learnpool.fun" target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4" />
+              Enter LearnPool
+            </a>
+          </Button>
 
           {/* Mobile menu */}
           <Sheet open={open} onOpenChange={setOpen}>
@@ -74,6 +84,14 @@ export default function Header() {
                 >
                   <BookOpen className="mr-2 h-5 w-5" />
                   Generate
+                </Link>
+                <Link 
+                  to="/quizzes" 
+                  className="flex items-center text-sm font-medium py-2"
+                  onClick={() => setOpen(false)}
+                >
+                  <Award className="mr-2 h-5 w-5" />
+                  Quiz
                 </Link>
                 <Link 
                   to="/challenges" 
@@ -99,9 +117,20 @@ export default function Header() {
                   <Award className="mr-2 h-5 w-5" />
                   Rewards
                 </Link>
-                <div className="py-2">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm font-medium">Theme</span>
                   <ThemeToggle />
                 </div>
+                <a 
+                  href="https://pk.learnpool.fun" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center text-sm font-medium py-2"
+                  onClick={() => setOpen(false)}
+                >
+                  <ExternalLink className="mr-2 h-5 w-5" />
+                  Enter LearnPool
+                </a>
                 <Button asChild className="gap-2 mt-2" onClick={() => setOpen(false)}>
                   <Link to="/login">
                     <Crown className="h-4 w-4" />

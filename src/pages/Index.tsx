@@ -1,29 +1,125 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Award, Clock, Crown, Flame, Gift, Lightbulb, Star, Trophy, Users } from 'lucide-react';
+import { ArrowRight, Award, Clock, Crown, ExternalLink, Flame, Gift, Lightbulb, Star, Trophy, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PKStarCounter from '@/components/PKStarCounter';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+
+// Daily challenge questions with correct answers
+const dailyChallenges = [
+  {
+    question: "What consensus mechanism does Ethereum currently use?",
+    options: ["Proof of Stake", "Proof of Work", "Delegated Proof of Stake", "Proof of Authority"],
+    correctAnswer: "Proof of Stake",
+    reward: 5
+  },
+  {
+    question: "Which company created the programming language TypeScript?",
+    options: ["Google", "Microsoft", "Apple", "Facebook"],
+    correctAnswer: "Microsoft",
+    reward: 5
+  },
+  {
+    question: "What year was Bitcoin's whitepaper published?",
+    options: ["2006", "2008", "2010", "2012"],
+    correctAnswer: "2008",
+    reward: 5
+  },
+  {
+    question: "Which blockchain is known for its smart contract functionality?",
+    options: ["Bitcoin", "Ethereum", "Litecoin", "Dogecoin"],
+    correctAnswer: "Ethereum",
+    reward: 5
+  },
+  {
+    question: "What is the term for digital assets that use blockchain to establish ownership?",
+    options: ["NFTs", "DeFi", "DAO", "DApp"],
+    correctAnswer: "NFTs",
+    reward: 5
+  },
+  {
+    question: "Which layer 2 scaling solution uses optimistic rollups?",
+    options: ["Arbitrum", "Lightning Network", "Raiden", "Plasma"],
+    correctAnswer: "Arbitrum",
+    reward: 5
+  }
+];
 
 const Index = () => {
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>("Proof of Stake");
+  const [dailyChallenge, setDailyChallenge] = useState(dailyChallenges[0]);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [pkStars, setPkStars] = useLocalStorage<number>('pkStars', 10);
+  const [lastChallengeTime, setLastChallengeTime] = useLocalStorage<number | null>('lastChallengeTime', null);
+  
+  // Update the challenge every hour
+  useEffect(() => {
+    const currentTime = Date.now();
+    const hoursSinceEpoch = Math.floor(currentTime / (1000 * 60 * 60));
+    
+    // Get challenge based on current hour
+    const challengeIndex = hoursSinceEpoch % dailyChallenges.length;
+    setDailyChallenge(dailyChallenges[challengeIndex]);
+    
+    // Check if the user has already submitted this hour's challenge
+    if (lastChallengeTime) {
+      const lastChallengeHour = Math.floor(lastChallengeTime / (1000 * 60 * 60));
+      if (lastChallengeHour === hoursSinceEpoch) {
+        setHasSubmitted(true);
+      } else {
+        setHasSubmitted(false);
+        setSelectedAnswer(null);
+        setIsCorrect(false);
+      }
+    }
+    
+    // Check every minute if we need to update the challenge
+    const intervalId = setInterval(() => {
+      const newCurrentTime = Date.now();
+      const newHoursSinceEpoch = Math.floor(newCurrentTime / (1000 * 60 * 60));
+      
+      if (newHoursSinceEpoch !== hoursSinceEpoch) {
+        // New hour, new challenge
+        const newChallengeIndex = newHoursSinceEpoch % dailyChallenges.length;
+        setDailyChallenge(dailyChallenges[newChallengeIndex]);
+        setHasSubmitted(false);
+        setSelectedAnswer(null);
+        setIsCorrect(false);
+      }
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(intervalId);
+  }, [lastChallengeTime]);
 
   const handleDailyChallengeSubmit = () => {
-    if (selectedAnswer === "Proof of Stake") {
+    if (!selectedAnswer) return;
+    
+    const correct = selectedAnswer === dailyChallenge.correctAnswer;
+    setIsCorrect(correct);
+    
+    if (correct) {
+      // Add stars for correct answer
+      setPkStars(pkStars + dailyChallenge.reward);
+      
       toast({
         title: "Correct!",
-        description: "You've earned 5 PK stars for today's challenge.",
+        description: `You've earned ${dailyChallenge.reward} PK stars for today's challenge.`,
       });
     } else {
       toast({
         title: "Incorrect",
-        description: "The correct answer was Proof of Stake.",
+        description: `The correct answer was ${dailyChallenge.correctAnswer}.`,
         variant: "destructive",
       });
     }
+    
+    // Mark as submitted and save the time
     setHasSubmitted(true);
+    setLastChallengeTime(Date.now());
   };
 
   return (
@@ -77,52 +173,48 @@ const Index = () => {
                   <h3 className="text-2xl font-bold">Daily Challenge</h3>
                   <p className="text-muted-foreground">Complete for bonus PK stars!</p>
                 </div>
-                <PKStarCounter pkStars={25} />
+                <PKStarCounter pkStars={pkStars} />
               </div>
               <div className="mb-4">
-                <h4 className="font-medium text-lg mb-2">What consensus mechanism does Ethereum currently use?</h4>
+                <h4 className="font-medium text-lg mb-2">{dailyChallenge.question}</h4>
               </div>
               <div className="space-y-4">
-                <div 
-                  className={`quiz-option ${selectedAnswer === "Proof of Stake" ? "selected" : ""}`}
-                  onClick={() => !hasSubmitted && setSelectedAnswer("Proof of Stake")}
-                >
-                  <div className="flex items-center justify-between">
-                    <span>Proof of Stake</span>
-                    {selectedAnswer === "Proof of Stake" && <span className="text-primary">Selected</span>}
+                {dailyChallenge.options.map((option) => (
+                  <div 
+                    key={option}
+                    className={`p-3 border rounded-lg cursor-pointer transition ${
+                      hasSubmitted ? (
+                        option === dailyChallenge.correctAnswer
+                          ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
+                          : option === selectedAnswer
+                            ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
+                            : 'bg-background border-border'
+                      ) : (
+                        selectedAnswer === option
+                          ? 'bg-primary/10 border-primary'
+                          : 'bg-background border-border hover:bg-primary/5'
+                      )
+                    }`}
+                    onClick={() => !hasSubmitted && setSelectedAnswer(option)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>{option}</span>
+                      {hasSubmitted && option === dailyChallenge.correctAnswer && (
+                        <span className="text-green-600 dark:text-green-400">Correct</span>
+                      )}
+                      {hasSubmitted && option === selectedAnswer && option !== dailyChallenge.correctAnswer && (
+                        <span className="text-red-600 dark:text-red-400">Incorrect</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div 
-                  className={`quiz-option ${selectedAnswer === "Proof of Work" ? "selected" : ""}`}
-                  onClick={() => !hasSubmitted && setSelectedAnswer("Proof of Work")}
-                >
-                  <div className="flex items-center">
-                    <span>Proof of Work</span>
-                  </div>
-                </div>
-                <div 
-                  className={`quiz-option ${selectedAnswer === "Delegated Proof of Stake" ? "selected" : ""}`}
-                  onClick={() => !hasSubmitted && setSelectedAnswer("Delegated Proof of Stake")}
-                >
-                  <div className="flex items-center">
-                    <span>Delegated Proof of Stake</span>
-                  </div>
-                </div>
-                <div 
-                  className={`quiz-option ${selectedAnswer === "Proof of Authority" ? "selected" : ""}`}
-                  onClick={() => !hasSubmitted && setSelectedAnswer("Proof of Authority")}
-                >
-                  <div className="flex items-center">
-                    <span>Proof of Authority</span>
-                  </div>
-                </div>
+                ))}
               </div>
               <Button 
                 className="w-full mt-6" 
                 onClick={handleDailyChallengeSubmit}
-                disabled={hasSubmitted}
+                disabled={hasSubmitted || !selectedAnswer}
               >
-                {hasSubmitted ? "Submitted" : "Submit Answer"}
+                {hasSubmitted ? isCorrect ? "Correct! +5 ★" : "Incorrect" : "Submit Answer"}
               </Button>
             </div>
           </div>
@@ -308,6 +400,14 @@ const Index = () => {
               <Link to="/login">
                 Login with LearnPool
               </Link>
+            </Button>
+          </div>
+          <div className="mt-6 flex justify-center">
+            <Button variant="link" asChild>
+              <a href="https://pk.learnpool.fun" target="_blank" rel="noopener noreferrer" className="flex items-center">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Enter LearnPool
+              </a>
             </Button>
           </div>
         </div>
